@@ -41,6 +41,8 @@ void main(List<String> args) async {
     final cmakeBuildResult = await Process.run('cmake', [
       '--build',
       buildDir.toFilePath(),
+      '--config',
+      buildMode,
     ]);
     if (cmakeBuildResult.exitCode != 0) {
       stderr.write(cmakeBuildResult.stderr);
