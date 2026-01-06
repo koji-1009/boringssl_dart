@@ -55,7 +55,6 @@ final config = FfiGenerator(
     'EVP_aes_192_ctr',
     'EVP_aes_256_ctr',
     'EVP_aes_128_gcm',
-    'EVP_aes_192_gcm',
     'EVP_aes_256_gcm',
     // AEAD (GCM)
     'EVP_AEAD_CTX_new',
@@ -76,10 +75,8 @@ final config = FfiGenerator(
     'EVP_PKEY_decrypt',
     'EVP_PKEY_CTX_set_rsa_padding',
     'EVP_PKEY_CTX_set_rsa_oaep_md',
-    'EVP_PKEY_CTX_set_rsa_mgf1_md',
     'EVP_PKEY_CTX_set0_rsa_oaep_label',
     'EVP_PKEY_assign_RSA',
-    'EVP_PKEY_get1_RSA',
     'EVP_PKEY_set1_RSA',
     'RSA_new',
     'RSA_free',
@@ -90,7 +87,6 @@ final config = FfiGenerator(
     'd2i_RSAPublicKey',
     'd2i_RSAPrivateKey',
     'i2d_RSAPublicKey',
-    'i2d_RSAPrivateKey',
     'd2i_RSA_PUBKEY',
     'i2d_RSA_PUBKEY',
     // BIGNUM functions

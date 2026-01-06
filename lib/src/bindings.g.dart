@@ -169,9 +169,6 @@ external ffi.Pointer<EVP_CIPHER> EVP_aes_192_cbc();
 @ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
 external ffi.Pointer<EVP_CIPHER> EVP_aes_192_ctr();
 
-@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
-external ffi.Pointer<EVP_CIPHER> EVP_aes_192_gcm();
-
 @ffi.Native<ffi.Pointer<EVP_AEAD> Function()>()
 external ffi.Pointer<EVP_AEAD> EVP_aead_aes_128_gcm();
 
@@ -424,12 +421,6 @@ external int EVP_PKEY_CTX_set_rsa_oaep_md(
   ffi.Pointer<EVP_MD> md,
 );
 
-@ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY_CTX>, ffi.Pointer<EVP_MD>)>()
-external int EVP_PKEY_CTX_set_rsa_mgf1_md(
-  ffi.Pointer<EVP_PKEY_CTX> ctx,
-  ffi.Pointer<EVP_MD> md,
-);
-
 @ffi.Native<
   ffi.Int Function(ffi.Pointer<EVP_PKEY_CTX>, ffi.Pointer<ffi.Uint8>, ffi.Size)
 >()
@@ -437,6 +428,21 @@ external int EVP_PKEY_CTX_set0_rsa_oaep_label(
   ffi.Pointer<EVP_PKEY_CTX> ctx,
   ffi.Pointer<ffi.Uint8> label,
   int label_len,
+);
+
+@ffi.Native<
+  ffi.Pointer<EVP_PKEY> Function(
+    ffi.Int,
+    ffi.Pointer<ffi.Pointer<EVP_PKEY>>,
+    ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
+    ffi.Long,
+  )
+>()
+external ffi.Pointer<EVP_PKEY> d2i_PrivateKey(
+  int type,
+  ffi.Pointer<ffi.Pointer<EVP_PKEY>> out,
+  ffi.Pointer<ffi.Pointer<ffi.Uint8>> inp,
+  int len,
 );
 
 @ffi.Native<
