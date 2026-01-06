@@ -29,11 +29,7 @@ jobs:
         with:
           sdk: ${{ matrix.sdk }}
 
-      - name: Install dependencies (Linux)
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y ninja-build build-essential pkg-config
+
 
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
