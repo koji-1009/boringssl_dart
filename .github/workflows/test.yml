@@ -28,7 +28,7 @@ jobs:
 
       - name: Install dependencies (Windows)
         if: runner.os == 'Windows'
-        run: choco install cmake nasm
+        run: choco install cmake
 
       - name: Run Tests
         run: |
