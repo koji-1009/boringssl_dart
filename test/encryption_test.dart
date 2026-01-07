@@ -88,10 +88,10 @@ void main() {
         Uint8List.fromList(plainText),
       );
       expect(cipherText, isNot(equals(plainText)));
-      expect(cipherText.length, equals(128)); // 1024 bits = 128 bytes
+      expect(cipherText.length, equals(256)); // 2048 bits = 256 bytes
 
       final decrypted = RsaOaep.decrypt(
-        RsaKey.importPkcs1(rsaPrivateKey),
+        RsaKey.importPkcs8(rsaPrivateKey),
         cipherText,
       );
       expect(utf8.decode(decrypted), equals('Hello RSA-OAEP'));
@@ -108,7 +108,7 @@ void main() {
       );
 
       final decrypted = RsaOaep.decrypt(
-        RsaKey.importPkcs1(rsaPrivateKey),
+        RsaKey.importPkcs8(rsaPrivateKey),
         cipherText,
         label: Uint8List.fromList(label),
       );
@@ -117,7 +117,7 @@ void main() {
       // Wrong label should fail
       expect(
         () => RsaOaep.decrypt(
-          RsaKey.importPkcs1(rsaPrivateKey),
+          RsaKey.importPkcs8(rsaPrivateKey),
           cipherText,
           label: Uint8List.fromList(utf8.encode('wrong')),
         ),
@@ -166,6 +166,7 @@ void main() {
       );
     });
   });
+
   group('AES-CBC (WebCrypto KAT)', () {
     // Vectors from google/webcrypto.dart
     test('A128CBC', () {

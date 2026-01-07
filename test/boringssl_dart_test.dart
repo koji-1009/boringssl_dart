@@ -70,5 +70,16 @@ void main() {
           .join('');
       expect(hex, equals(expected));
     });
+
+    test('getOpenSslErrors returns clean stack', () {
+      // Ensure stack is initially clean
+      expect(getOpenSslErrors(), isEmpty);
+
+      // We can't easily force an error in the public API without throwing an exception.
+      // But we can verify that after a successful op, it remains clean.
+      final buffer = Uint8List(16);
+      getRandomValues(buffer);
+      expect(getOpenSslErrors(), isEmpty);
+    });
   });
 }
