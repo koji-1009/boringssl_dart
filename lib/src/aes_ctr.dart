@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 import 'bindings.g.dart';
+import 'util.dart';
 
 /// AES-CTR encryption/decryption.
 class AesCtr {
@@ -35,13 +36,12 @@ class AesCtr {
   ) {
     return using((arena) {
       final ctx = EVP_CIPHER_CTX_new();
-      if (ctx == nullptr) {
-        throw Exception('Failed to create cipher context');
-      }
+      checkOp(ctx != nullptr, message: 'Failed to create cipher context');
 
       try {
         final cipher = switch (key.length) {
           16 => EVP_aes_128_ctr(),
+          24 => EVP_aes_192_ctr(),
           32 => EVP_aes_256_ctr(),
           _ => throw ArgumentError('Invalid key length: ${key.length}'),
         };
@@ -59,9 +59,10 @@ class AesCtr {
         // AES-CTR uses the same function for encryption and decryption.
         // But we pass 1 for encrypt to be consistent, though EVP might ignore it for CTR.
         final enc = encrypt ? 1 : 0;
-        if (EVP_CipherInit_ex(ctx, cipher, nullptr, keyPtr, ivPtr, enc) != 1) {
-          throw Exception('Cipher init failed');
-        }
+        checkOpIsOne(
+          EVP_CipherInit_ex(ctx, cipher, nullptr, keyPtr, ivPtr, enc),
+          message: 'Cipher init failed',
+        );
 
         // AES-CTR is a stream cipher, so input length == output length.
         final outPtr = arena<Uint8>(data.length);
@@ -71,14 +72,16 @@ class AesCtr {
         final inPtr = arena<Uint8>(data.length);
         inPtr.asTypedList(data.length).setAll(0, data);
 
-        if (EVP_CipherUpdate(ctx, outPtr, outLenPtr, inPtr, data.length) != 1) {
-          throw Exception('Cipher update failed');
-        }
+        checkOpIsOne(
+          EVP_CipherUpdate(ctx, outPtr, outLenPtr, inPtr, data.length),
+          message: 'Cipher update failed',
+        );
         totalOut.addAll(outPtr.asTypedList(outLenPtr.value));
 
-        if (EVP_CipherFinal_ex(ctx, outPtr, outLenPtr) != 1) {
-          throw Exception('Cipher final failed');
-        }
+        checkOpIsOne(
+          EVP_CipherFinal_ex(ctx, outPtr, outLenPtr),
+          message: 'Cipher final failed',
+        );
         totalOut.addAll(outPtr.asTypedList(outLenPtr.value));
 
         return Uint8List.fromList(totalOut);
@@ -110,15 +113,14 @@ class AesCtrContext implements Finalizable {
 
   AesCtrContext._(Uint8List key, Uint8List iv, bool encrypt)
     : _ctx = EVP_CIPHER_CTX_new() {
-    if (_ctx == nullptr) {
-      throw Exception('Failed to create context');
-    }
+    checkOp(_ctx != nullptr, message: 'Failed to create context');
     _finalizer.attach(this, _ctx.cast(), detach: this);
 
     try {
       using((arena) {
         final cipher = switch (key.length) {
           16 => EVP_aes_128_ctr(),
+          24 => EVP_aes_192_ctr(),
           32 => EVP_aes_256_ctr(),
           _ => throw ArgumentError('Invalid key length: ${key.length}'),
         };
@@ -134,9 +136,10 @@ class AesCtrContext implements Finalizable {
         ivPtr.asTypedList(iv.length).setAll(0, iv);
 
         final enc = encrypt ? 1 : 0;
-        if (EVP_CipherInit_ex(_ctx, cipher, nullptr, keyPtr, ivPtr, enc) != 1) {
-          throw Exception('Cipher init failed');
-        }
+        checkOpIsOne(
+          EVP_CipherInit_ex(_ctx, cipher, nullptr, keyPtr, ivPtr, enc),
+          message: 'Cipher init failed',
+        );
       });
     } catch (_) {
       EVP_CIPHER_CTX_free(_ctx);
@@ -154,9 +157,10 @@ class AesCtrContext implements Finalizable {
       final outPtr = arena<Uint8>(data.length);
       final outLenPtr = arena<Int>();
 
-      if (EVP_CipherUpdate(_ctx, outPtr, outLenPtr, inPtr, data.length) != 1) {
-        throw Exception('Update failed');
-      }
+      checkOpIsOne(
+        EVP_CipherUpdate(_ctx, outPtr, outLenPtr, inPtr, data.length),
+        message: 'Update failed',
+      );
       return Uint8List.fromList(outPtr.asTypedList(outLenPtr.value));
     });
   }
@@ -168,9 +172,10 @@ class AesCtrContext implements Finalizable {
       final outPtr = arena<Uint8>(16);
       final outLenPtr = arena<Int>();
 
-      if (EVP_CipherFinal_ex(_ctx, outPtr, outLenPtr) != 1) {
-        throw Exception('Final failed');
-      }
+      checkOpIsOne(
+        EVP_CipherFinal_ex(_ctx, outPtr, outLenPtr),
+        message: 'Final failed',
+      );
       return Uint8List.fromList(outPtr.asTypedList(outLenPtr.value));
     });
   }

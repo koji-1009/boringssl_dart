@@ -11,6 +11,9 @@ import 'dart:ffi' as ffi;
 external ffi.Pointer<EVP_AEAD> EVP_aead_aes_128_gcm();
 
 @ffi.Native<ffi.Pointer<EVP_AEAD> Function()>()
+external ffi.Pointer<EVP_AEAD> EVP_aead_aes_192_gcm();
+
+@ffi.Native<ffi.Pointer<EVP_AEAD> Function()>()
 external ffi.Pointer<EVP_AEAD> EVP_aead_aes_256_gcm();
 
 @ffi.Native<ffi.Size Function(ffi.Pointer<EVP_AEAD>)>()
@@ -258,6 +261,12 @@ external int EVP_CipherFinal_ex(
   ffi.Pointer<ffi.Uint8> out,
   ffi.Pointer<ffi.Int> out_len,
 );
+
+@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
+external ffi.Pointer<EVP_CIPHER> EVP_aes_192_cbc();
+
+@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
+external ffi.Pointer<EVP_CIPHER> EVP_aes_192_ctr();
 
 @ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Size)>()
 external ffi.Pointer<ffi.Void> OPENSSL_malloc(int size);
@@ -554,6 +563,9 @@ external ffi.Pointer<EVP_PKEY> EVP_PKEY_new();
 
 @ffi.Native<ffi.Void Function(ffi.Pointer<EVP_PKEY>)>()
 external void EVP_PKEY_free(ffi.Pointer<EVP_PKEY> pkey);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY>)>()
+external int EVP_PKEY_bits(ffi.Pointer<EVP_PKEY> pkey);
 
 @ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY>)>()
 external int EVP_PKEY_id(ffi.Pointer<EVP_PKEY> pkey);

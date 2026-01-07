@@ -62,3 +62,23 @@ bool constantTimeEq(Uint8List a, Uint8List b) {
     return CRYPTO_memcmp(aPtr.cast(), bPtr.cast(), a.length) == 0;
   });
 }
+
+/// Returns a list of all errors currently in the OpenSSL error queue,
+/// and clears the queue.
+List<String> getOpenSslErrors() {
+  final errors = <String>[];
+  while (true) {
+    final err = ERR_get_error();
+    if (err == 0) break;
+    errors.add(_getErrorMessage(err));
+  }
+  return errors;
+}
+
+String _getErrorMessage(int err) {
+  return using((arena) {
+    final buf = arena<Uint8>(256);
+    ERR_error_string_n(err, buf.cast(), 256);
+    return buf.cast<Utf8>().toDartString();
+  });
+}

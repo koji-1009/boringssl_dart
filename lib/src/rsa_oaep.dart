@@ -5,6 +5,7 @@ import 'package:ffi/ffi.dart';
 
 import 'bindings.g.dart';
 import 'rsa.dart';
+import 'util.dart';
 
 /// RSA-OAEP encryption/decryption.
 class RsaOaep {
@@ -51,26 +52,26 @@ class RsaOaep {
       // We do NOT free pkey here, as it belongs to RsaKey.
 
       final ctx = EVP_PKEY_CTX_new(pkey, nullptr);
-      if (ctx == nullptr) {
-        throw Exception('Failed to create PKEY context');
-      }
+      checkOp(ctx != nullptr, message: 'Failed to create PKEY context');
 
       try {
         if (encrypt) {
-          if (EVP_PKEY_encrypt_init(ctx) != 1) {
-            throw Exception('Encrypt init failed');
-          }
+          checkOpIsOne(
+            EVP_PKEY_encrypt_init(ctx),
+            message: 'Encrypt init failed',
+          );
         } else {
-          if (EVP_PKEY_decrypt_init(ctx) != 1) {
-            throw Exception('Decrypt init failed');
-          }
+          checkOpIsOne(
+            EVP_PKEY_decrypt_init(ctx),
+            message: 'Decrypt init failed',
+          );
         }
 
         // Set Padding to OAEP
-        if (EVP_PKEY_CTX_set_rsa_padding(ctx, 4 /* RSA_PKCS1_OAEP_PADDING */) !=
-            1) {
-          throw Exception('Failed to set padding');
-        }
+        checkOpIsOne(
+          EVP_PKEY_CTX_set_rsa_padding(ctx, 4 /* RSA_PKCS1_OAEP_PADDING */),
+          message: 'Failed to set padding',
+        );
 
         // Set OAEP Hash
         Pointer<EVP_MD> md = switch (hashAlgorithm) {
@@ -81,17 +82,19 @@ class RsaOaep {
           _ => throw ArgumentError('Unsupported algorithm: $hashAlgorithm'),
         };
 
-        if (EVP_PKEY_CTX_set_rsa_oaep_md(ctx, md) != 1) {
-          throw Exception('Failed to set OAEP hash');
-        }
+        checkOpIsOne(
+          EVP_PKEY_CTX_set_rsa_oaep_md(ctx, md),
+          message: 'Failed to set OAEP hash',
+        );
 
         // Set Label if provided
         if (label != null && label.isNotEmpty) {
           // Use OPENSSL_malloc to transfer ownership to BoringSSL.
           final labelPtr = OPENSSL_malloc(label.length).cast<Uint8>();
-          if (labelPtr == nullptr) {
-            throw Exception('Failed to allocate label memory');
-          }
+          checkOp(
+            labelPtr != nullptr,
+            message: 'Failed to allocate label memory',
+          );
 
           labelPtr.asTypedList(label.length).setAll(0, label);
 
@@ -100,7 +103,7 @@ class RsaOaep {
             OPENSSL_free(
               labelPtr.cast<Void>(),
             ); // Free if ownership not transferred
-            throw Exception('Failed to set OAEP label');
+            checkOp(false, message: 'Failed to set OAEP label');
           }
           // On success, labelPtr ownership is transferred to ctx.
         }
@@ -112,15 +115,15 @@ class RsaOaep {
         // Determine buffer length
         int result;
         if (encrypt) {
-          if (EVP_PKEY_encrypt(ctx, nullptr, outLenPtr, inPtr, data.length) !=
-              1) {
-            throw Exception('Failed to get encrypt output length');
-          }
+          checkOpIsOne(
+            EVP_PKEY_encrypt(ctx, nullptr, outLenPtr, inPtr, data.length),
+            message: 'Failed to get encrypt output length',
+          );
         } else {
-          if (EVP_PKEY_decrypt(ctx, nullptr, outLenPtr, inPtr, data.length) !=
-              1) {
-            throw Exception('Failed to get decrypt output length');
-          }
+          checkOpIsOne(
+            EVP_PKEY_decrypt(ctx, nullptr, outLenPtr, inPtr, data.length),
+            message: 'Failed to get decrypt output length',
+          );
         }
 
         final outPtr = arena<Uint8>(outLenPtr.value);
@@ -131,9 +134,10 @@ class RsaOaep {
           result = EVP_PKEY_decrypt(ctx, outPtr, outLenPtr, inPtr, data.length);
         }
 
-        if (result != 1) {
-          throw Exception(encrypt ? 'Encryption failed' : 'Decryption failed');
-        }
+        checkOpIsOne(
+          result,
+          message: encrypt ? 'Encryption failed' : 'Decryption failed',
+        );
 
         return Uint8List.fromList(outPtr.asTypedList(outLenPtr.value));
       } finally {

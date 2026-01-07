@@ -24,6 +24,9 @@ class CryptoKey implements Finalizable {
   /// Create from an existing pointer (e.g. from generation).
   factory CryptoKey.fromPointer(Pointer<EVP_PKEY> ptr) => CryptoKey(ptr);
 
+  /// Returns the key size in bits.
+  int get bitLength => EVP_PKEY_bits(pkey);
+
   Uint8List exportPkcs8() {
     return runCBB((cbb) {
       if (EVP_marshal_private_key(cbb, pkey) != 1) {

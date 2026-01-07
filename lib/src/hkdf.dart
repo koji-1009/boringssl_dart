@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 import 'bindings.g.dart';
+import 'util.dart';
 
 int _errGetLib(int packedError) => (packedError >> 24) & 0xff;
 
@@ -63,7 +64,8 @@ class Hkdf {
           ERR_clear_error();
           throw ArgumentError('HKDF output length too large');
         }
-        throw Exception('HKDF derivation failed');
+        // Use checkOpIsOne to handle other errors and ensure cleanup
+        checkOpIsOne(result, message: 'HKDF derivation failed');
       }
 
       return Uint8List.fromList(outPtr.asTypedList(length));

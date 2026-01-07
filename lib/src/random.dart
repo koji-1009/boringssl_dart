@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 import 'bindings.g.dart';
+import 'util.dart';
 
 /// Fills [buffer] with cryptographically random values.
 ///
@@ -23,10 +24,10 @@ void getRandomValues(TypedData buffer) {
     // The buffer is automatically freed when the arena scope ends.
     final tempPtr = arena<Uint8>(length);
 
-    final result = RAND_bytes(tempPtr, length);
-    if (result != 1) {
-      throw Exception('Failed to generate random bytes');
-    }
+    checkOpIsOne(
+      RAND_bytes(tempPtr, length),
+      message: 'Failed to generate random bytes',
+    );
 
     // Copy back to Dart buffer
     final uint8List = buffer.buffer.asUint8List(buffer.offsetInBytes, length);
