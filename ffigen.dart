@@ -125,20 +125,46 @@ Future<void> setupBoringSsl() async {
   final targetCommit = commitFile.readAsStringSync().trim();
 
   if (!Directory(boringsslPath).existsSync()) {
-    print('Cloning BoringSSL...');
+    print('Initializing BoringSSL repository...');
+    await Directory(boringsslPath).create(recursive: true);
+    await _runGit(['init'], workingDirectory: boringsslPath);
     await _runGit([
-      'clone',
+      'remote',
+      'add',
+      'origin',
       'https://github.com/google/boringssl.git',
-      boringsslPath,
-    ]);
-  } else {
-    try {
-      await _runGit(['fetch', 'origin'], workingDirectory: boringsslPath);
-    } catch (_) {}
+    ], workingDirectory: boringsslPath);
   }
 
-  print('Checking out $targetCommit...');
-  await _runGit(['checkout', targetCommit], workingDirectory: boringsslPath);
+  print('Fetching BoringSSL commit $targetCommit...');
+  await _runGit([
+    'fetch',
+    '--depth',
+    '1',
+    '--no-tags',
+    'origin',
+    targetCommit,
+  ], workingDirectory: boringsslPath);
+
+  // Check if we are already on the target commit
+  String? currentHead;
+
+  // Correction: _runGit as defined in previous steps is void and throws.
+  // Use Process.run directly for checks.
+  final headResult = await Process.run('git', [
+    'rev-parse',
+    'HEAD',
+  ], workingDirectory: boringsslPath);
+  if (headResult.exitCode == 0) {
+    currentHead = headResult.stdout.toString().trim();
+  }
+
+  if (currentHead == targetCommit) {
+    print('Already on commit $targetCommit. Skipping checkout.');
+  } else {
+    print('Checking out $targetCommit...');
+    await _runGit(['checkout', targetCommit], workingDirectory: boringsslPath);
+  }
 }
 
 Future<void> _runGit(List<String> args, {String? workingDirectory}) async {

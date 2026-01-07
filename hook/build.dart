@@ -89,32 +89,35 @@ Future<void> _syncBoringSsl(Uri packageRoot) async {
   }
 
   final targetCommit = File.fromUri(commitFile).readAsStringSync().trim();
-  final gitRoot = packageRoot.toFilePath();
+  final boringsslPath = boringsslDir.toFilePath();
 
   if (!Directory.fromUri(boringsslDir).existsSync()) {
-    stderr.writeln('Cloning BoringSSL...');
+    stderr.writeln('Initializing BoringSSL repository...');
+    await Directory.fromUri(boringsslDir).create(recursive: true);
+    await _runCommand('git', ['init'], workingDirectory: boringsslPath);
     await _runCommand('git', [
-      'clone',
+      'remote',
+      'add',
+      'origin',
       'https://github.com/google/boringssl.git',
-      'third_party/boringssl',
-    ], workingDirectory: gitRoot);
-  } else {
-    // Optional fetch to ensure we have the commit
-    try {
-      await Process.run('git', [
-        'fetch',
-        'origin',
-      ], workingDirectory: boringsslDir.toFilePath());
-    } catch (_) {
-      // Ignore fetch errors (e.g. offline), hope we have the commit locally
-    }
+    ], workingDirectory: boringsslPath);
   }
+
+  stderr.writeln('Fetching BoringSSL commit $targetCommit...');
+  await _runCommand('git', [
+    'fetch',
+    '--depth',
+    '1',
+    '--no-tags',
+    'origin',
+    targetCommit,
+  ], workingDirectory: boringsslPath);
 
   stderr.writeln('Checking out BoringSSL: $targetCommit');
   await _runCommand('git', [
     'checkout',
     targetCommit,
-  ], workingDirectory: boringsslDir.toFilePath());
+  ], workingDirectory: boringsslPath);
 }
 
 Future<void> _runCommand(
