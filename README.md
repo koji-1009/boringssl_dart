@@ -7,7 +7,6 @@ A Proof of Concept (PoC) for building and binding BoringSSL in Dart using **Dart
 *   **Dart SDK**: Version 3.10.0 or later.
 *   **CMake**: Required for building BoringSSL.
 *   **Git**: Required for downloading BoringSSL source code.
-*   **NASM** (Windows only): Required for assembly optimizations.
 
 ## Getting Started
 

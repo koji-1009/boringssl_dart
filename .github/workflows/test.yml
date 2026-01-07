@@ -26,10 +26,6 @@ jobs:
         with:
           sdk: ${{ matrix.sdk }}
 
-      - name: Install dependencies (Windows)
-        if: runner.os == 'Windows'
-        run: choco install cmake nasm
-
       - name: Run Tests
         run: |
           dart pub get
