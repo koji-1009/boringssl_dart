@@ -5,8 +5,10 @@ import 'package:hooks/hooks.dart';
 
 void main(List<String> args) async {
   await build(args, (input, output) async {
+    final targetOS = input.config.code.targetOS;
+    final targetArch = input.config.code.targetArchitecture;
     stderr.writeln('');
-    stderr.writeln('Run boringssl_dart build...');
+    stderr.writeln('Run boringssl_dart build ($targetOS/$targetArch)...');
 
     final packageName = input.packageName;
     final sourceDir = input.packageRoot.resolve('native/');
@@ -28,14 +30,73 @@ void main(List<String> args) async {
       '-DCMAKE_BUILD_TYPE=$buildMode',
     ];
 
-    final targetOS = input.config.code.targetOS;
-    final targetArch = input.config.code.targetArchitecture;
+    switch (targetOS) {
+      case .android:
+        // Android requires NDK toolchain for cross-compilation
+        final ndkPath = _findAndroidNdk();
+        if (ndkPath == null) {
+          throw Exception(
+            'Android NDK not found. Set ANDROID_NDK_HOME or install NDK via Android SDK Manager.',
+          );
+        }
 
-    if (targetOS == OS.macOS) {
-      cmakeArgs.add(
-        '-DCMAKE_OSX_ARCHITECTURES=${targetArch == Architecture.arm64 ? "arm64" : "x86_64"}',
-      );
-      cmakeArgs.add('-DCMAKE_MACOSX_BUNDLE=OFF');
+        final abi = switch (targetArch) {
+          Architecture.arm64 => 'arm64-v8a',
+          Architecture.arm => 'armeabi-v7a',
+          Architecture.x64 => 'x86_64',
+          Architecture.ia32 => 'x86',
+          _ => throw Exception('Unsupported Android architecture: $targetArch'),
+        };
+
+        cmakeArgs.addAll([
+          '-DCMAKE_TOOLCHAIN_FILE=$ndkPath/build/cmake/android.toolchain.cmake',
+          '-DANDROID_ABI=$abi',
+          '-DANDROID_PLATFORM=android-21',
+          '-DANDROID_STL=c++_static',
+          // 16KB page size support for Android 15+ (API 35+)
+          // See: https://developer.android.com/guide/practices/page-sizes
+          '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON',
+        ]);
+      case .iOS:
+        // iOS cross-compilation support
+        final iosArch = targetArch == .arm64 ? 'arm64' : 'x86_64';
+
+        // Get target SDK from Flutter's config (simulator or device)
+        final iOSConfig = input.config.code.iOS;
+        final isSimulator = iOSConfig.targetSdk == IOSSdk.iPhoneSimulator;
+        final sdkName = isSimulator ? 'iphonesimulator' : 'iphoneos';
+
+        // Get sysroot path for the target SDK
+        final result = await Process.run('xcrun', [
+          '--sdk',
+          sdkName,
+          '--show-sdk-path',
+        ]);
+        final sysroot = result.exitCode == 0
+            ? result.stdout.toString().trim()
+            : null;
+
+        stderr.writeln('iOS SDK: $sdkName ($iosArch), sysroot: $sysroot');
+
+        cmakeArgs.addAll([
+          '-DCMAKE_SYSTEM_NAME=iOS',
+          '-DCMAKE_OSX_ARCHITECTURES=$iosArch',
+          if (sysroot != null && sysroot.isNotEmpty)
+            '-DCMAKE_OSX_SYSROOT=$sysroot',
+          // Minimum iOS deployment target
+          '-DCMAKE_OSX_DEPLOYMENT_TARGET=${iOSConfig.targetVersion}',
+        ]);
+      case .macOS:
+        cmakeArgs.add(
+          '-DCMAKE_OSX_ARCHITECTURES=${targetArch == Architecture.arm64 ? "arm64" : "x86_64"}',
+        );
+        cmakeArgs.add('-DCMAKE_MACOSX_BUNDLE=OFF');
+      case .linux:
+        // Linux: ensure position-independent code for shared library
+        cmakeArgs.add('-DCMAKE_POSITION_INDEPENDENT_CODE=ON');
+      case .windows:
+      // Windows: use appropriate generator if available
+      // CMake defaults should work for most cases
     }
 
     stderr.writeln('Run cmake...');
@@ -131,9 +192,69 @@ Future<void> _runCommand(
     workingDirectory: workingDirectory,
   );
   if (result.exitCode != 0) {
-    stderr.write(result.stderr);
+    stderr.writeln('=== Command failed: $executable ${args.join(" ")} ===');
+    if (result.stdout.toString().isNotEmpty) {
+      stderr.writeln('stdout:');
+      stderr.write(result.stdout);
+    }
+    if (result.stderr.toString().isNotEmpty) {
+      stderr.writeln('stderr:');
+      stderr.write(result.stderr);
+    }
     throw Exception(
       '$executable ${args.join(" ")} failed with exit code ${result.exitCode}',
     );
   }
+}
+
+/// Auto-detect Android NDK from environment or common locations.
+String? _findAndroidNdk() {
+  // 1. Check environment variables
+  final envNdk =
+      Platform.environment['ANDROID_NDK_HOME'] ??
+      Platform.environment['ANDROID_NDK'];
+  if (envNdk != null && envNdk.isNotEmpty && Directory(envNdk).existsSync()) {
+    return envNdk;
+  }
+
+  // 2. Check ANDROID_HOME/ANDROID_SDK_ROOT for side-by-side NDK
+  final androidHome =
+      Platform.environment['ANDROID_HOME'] ??
+      Platform.environment['ANDROID_SDK_ROOT'];
+  if (androidHome != null && androidHome.isNotEmpty) {
+    final ndkDir = Directory('$androidHome/ndk');
+    if (ndkDir.existsSync()) {
+      // Find latest NDK version
+      final versions = ndkDir.listSync().whereType<Directory>().toList();
+      if (versions.isNotEmpty) {
+        versions.sort((a, b) => b.path.compareTo(a.path));
+        return versions.first.path;
+      }
+    }
+    // Legacy ndk-bundle location
+    final ndkBundle = Directory('$androidHome/ndk-bundle');
+    if (ndkBundle.existsSync()) {
+      return ndkBundle.path;
+    }
+  }
+
+  // 3. Check common user locations
+  final home = Platform.environment['HOME'] ?? '';
+  final commonPaths = [
+    '$home/Library/Android/sdk/ndk',
+    '$home/Android/Sdk/ndk',
+    '/usr/local/share/android-sdk/ndk',
+  ];
+  for (final path in commonPaths) {
+    final ndkDir = Directory(path);
+    if (ndkDir.existsSync()) {
+      final versions = ndkDir.listSync().whereType<Directory>().toList();
+      if (versions.isNotEmpty) {
+        versions.sort((a, b) => b.path.compareTo(a.path));
+        return versions.first.path;
+      }
+    }
+  }
+
+  return null;
 }

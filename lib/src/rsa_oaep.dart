@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 import 'bindings.g.dart';
+import 'rsa.dart';
 
 /// RSA-OAEP encryption/decryption.
 class RsaOaep {
@@ -11,11 +12,11 @@ class RsaOaep {
 
   /// Encrypts [data] using RSA-OAEP.
   ///
-  /// [publicKey] must be a DER-encoded SubjectPublicKeyInfo (SPKI).
+  /// [publicKey] must be an RsaKey (with public key components).
   /// [hash] is the hash function to use for OAEP (default SHA-256).
   /// [label] is optional label data.
   static Uint8List encrypt(
-    Uint8List publicKey,
+    RsaKey publicKey,
     Uint8List data, {
     String hash = 'SHA-256',
     Uint8List? label,
@@ -25,11 +26,11 @@ class RsaOaep {
 
   /// Decrypts [data] using RSA-OAEP.
   ///
-  /// [privateKey] must be a DER-encoded RSAPrivateKey (PKCS#1).
+  /// [privateKey] must be an RsaKey (with private key components).
   /// [hash] is the hash function to use for OAEP (default SHA-256).
   /// [label] must match the label used during encryption.
   static Uint8List decrypt(
-    Uint8List privateKey,
+    RsaKey privateKey,
     Uint8List data, {
     String hash = 'SHA-256',
     Uint8List? label,
@@ -38,50 +39,19 @@ class RsaOaep {
   }
 
   static Uint8List _transform(
-    Uint8List keyBytes,
+    RsaKey key,
     Uint8List data,
     bool encrypt,
     String hashAlgorithm,
     Uint8List? label,
   ) {
     return using((arena) {
-      final keyPtr = arena<Uint8>(keyBytes.length);
-      keyPtr.asTypedList(keyBytes.length).setAll(0, keyBytes);
-      final keyPtrPtr = arena<Pointer<Uint8>>();
-      keyPtrPtr.value = keyPtr;
-
-      Pointer<EVP_PKEY> pkey;
-
-      if (encrypt) {
-        // Parse Public Key (SPKI)
-        // d2i_RSA_PUBKEY reads SPKI and returns RSA*.
-        final rsa = d2i_RSA_PUBKEY(nullptr, keyPtrPtr, keyBytes.length);
-        if (rsa == nullptr) {
-          throw Exception('Failed to parse public key');
-        }
-        pkey = EVP_PKEY_new();
-        if (EVP_PKEY_assign_RSA(pkey, rsa) != 1) {
-          RSA_free(rsa);
-          EVP_PKEY_free(pkey);
-          throw Exception('Failed to assign RSA key to PKEY');
-        }
-      } else {
-        // Parse Private Key (PKCS#1)
-        final rsa = d2i_RSAPrivateKey(nullptr, keyPtrPtr, keyBytes.length);
-        if (rsa == nullptr) {
-          throw Exception('Failed to parse private key');
-        }
-        pkey = EVP_PKEY_new();
-        if (EVP_PKEY_assign_RSA(pkey, rsa) != 1) {
-          RSA_free(rsa);
-          EVP_PKEY_free(pkey);
-          throw Exception('Failed to assign RSA key to PKEY');
-        }
-      }
+      // Use existing EVP_PKEY from RsaKey
+      final pkey = key.pkey;
+      // We do NOT free pkey here, as it belongs to RsaKey.
 
       final ctx = EVP_PKEY_CTX_new(pkey, nullptr);
       if (ctx == nullptr) {
-        EVP_PKEY_free(pkey);
         throw Exception('Failed to create PKEY context');
       }
 
@@ -168,7 +138,7 @@ class RsaOaep {
         return Uint8List.fromList(outPtr.asTypedList(outLenPtr.value));
       } finally {
         EVP_PKEY_CTX_free(ctx);
-        EVP_PKEY_free(pkey);
+        // Do NOT free pkey.
       }
     });
   }

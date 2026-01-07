@@ -16,6 +16,25 @@ set(BUILD_SHARED_LIBS OFF)
 set(BUILD_TESTING OFF)
 add_definitions(-DOPENSSL_SMALL)
 
+# Size Optimization for Release builds (not on Windows - causes build issues)
+if(CMAKE_BUILD_TYPE STREQUAL "Release" AND NOT WIN32)
+    # Link-Time Optimization (IPO/LTO) - significant size reduction
+    include(CheckIPOSupported)
+    check_ipo_supported(RESULT ipo_supported OUTPUT ipo_error)
+    if(ipo_supported)
+        set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+    endif()
+
+    # Compiler flags for size optimization
+    add_compile_options(-Os -fdata-sections -ffunction-sections)
+    # Strip unneeded symbols on link
+    if(APPLE)
+        add_link_options(-Wl,-dead_strip)
+    else()
+        add_link_options(-Wl,--gc-sections -Wl,--strip-all)
+    endif()
+endif()
+
 # Windows: Define these BEFORE add_subdirectory so BoringSSL picks them up
 if(WIN32)
     add_definitions(-D_HAS_EXCEPTIONS=0 -DWIN32_LEAN_AND_MEAN -DNOMINMAX -D_CRT_SECURE_NO_WARNINGS)
@@ -23,6 +42,12 @@ if(WIN32)
     add_definitions(-DBORINGSSL_SHARED_LIBRARY)
 endif()
 
+# iOS: Prevent bssl from being built as MACOSX_BUNDLE (causes install error)
+# BoringSSL's "install(TARGETS bssl)" fails because iOS sets MACOSX_BUNDLE=ON
+# for all executables, but bssl's install command lacks BUNDLE DESTINATION.
+if(CMAKE_SYSTEM_NAME STREQUAL "iOS")
+    set(CMAKE_MACOSX_BUNDLE OFF)
+endif()
 
 add_subdirectory(../third_party/boringssl boringssl EXCLUDE_FROM_ALL)
 

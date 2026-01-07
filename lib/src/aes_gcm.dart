@@ -64,15 +64,9 @@ class AesGcm {
     int tagLength,
     bool encrypt,
   ) {
-    if (iv.length != 12) {
-      // BoringSSL strongly recommends 12-byte IVs for GCM.
-      throw ArgumentError('IV must be 12 bytes');
-    }
-
     return using((arena) {
       final aead = switch (key.length) {
         16 => EVP_aead_aes_128_gcm(),
-        24 => EVP_aead_aes_192_gcm(),
         32 => EVP_aead_aes_256_gcm(),
         _ => throw ArgumentError('Invalid key length: ${key.length}'),
       };
