@@ -84,13 +84,16 @@ void main() {
       final plainText = utf8.encode('Hello RSA-OAEP');
 
       final cipherText = RsaOaep.encrypt(
-        rsaPublicKey,
+        RsaKey.importSpki(rsaPublicKey),
         Uint8List.fromList(plainText),
       );
       expect(cipherText, isNot(equals(plainText)));
       expect(cipherText.length, equals(128)); // 1024 bits = 128 bytes
 
-      final decrypted = RsaOaep.decrypt(rsaPrivateKey, cipherText);
+      final decrypted = RsaOaep.decrypt(
+        RsaKey.importPkcs1(rsaPrivateKey),
+        cipherText,
+      );
       expect(utf8.decode(decrypted), equals('Hello RSA-OAEP'));
     });
 
@@ -99,13 +102,13 @@ void main() {
       final label = utf8.encode('secret-label');
 
       final cipherText = RsaOaep.encrypt(
-        rsaPublicKey,
+        RsaKey.importSpki(rsaPublicKey),
         Uint8List.fromList(plainText),
         label: Uint8List.fromList(label),
       );
 
       final decrypted = RsaOaep.decrypt(
-        rsaPrivateKey,
+        RsaKey.importPkcs1(rsaPrivateKey),
         cipherText,
         label: Uint8List.fromList(label),
       );
@@ -114,7 +117,7 @@ void main() {
       // Wrong label should fail
       expect(
         () => RsaOaep.decrypt(
-          rsaPrivateKey,
+          RsaKey.importPkcs1(rsaPrivateKey),
           cipherText,
           label: Uint8List.fromList(utf8.encode('wrong')),
         ),
@@ -253,7 +256,7 @@ void main() {
       final plainText = base64Decode('cXVpcwptaSBldCBvcmNpIGltcGVyZGk=');
 
       final decrypted = RsaOaep.decrypt(
-        pkcs1Key,
+        RsaKey.importPkcs1(pkcs1Key),
         cipherText,
         hash: 'SHA-512',
         label: label,

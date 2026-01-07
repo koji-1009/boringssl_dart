@@ -42,7 +42,6 @@ class AesCtr {
       try {
         final cipher = switch (key.length) {
           16 => EVP_aes_128_ctr(),
-          24 => EVP_aes_192_ctr(),
           32 => EVP_aes_256_ctr(),
           _ => throw ArgumentError('Invalid key length: ${key.length}'),
         };
@@ -86,6 +85,93 @@ class AesCtr {
       } finally {
         EVP_CIPHER_CTX_free(ctx);
       }
+    });
+  }
+
+  /// Start a streaming encryption.
+  static AesCtrContext startEncrypt(Uint8List key, Uint8List iv) =>
+      AesCtrContext._(key, iv, true);
+
+  /// Start a streaming decryption.
+  static AesCtrContext startDecrypt(Uint8List key, Uint8List iv) =>
+      AesCtrContext._(key, iv, false);
+}
+
+/// Streaming AES-CTR context.
+class AesCtrContext implements Finalizable {
+  static final _finalizer = NativeFinalizer(
+    Native.addressOf<NativeFunction<Void Function(Pointer<EVP_CIPHER_CTX>)>>(
+      EVP_CIPHER_CTX_free,
+    ).cast(),
+  );
+
+  final Pointer<EVP_CIPHER_CTX> _ctx;
+  bool _isClosed = false;
+
+  AesCtrContext._(Uint8List key, Uint8List iv, bool encrypt)
+    : _ctx = EVP_CIPHER_CTX_new() {
+    if (_ctx == nullptr) {
+      throw Exception('Failed to create context');
+    }
+    _finalizer.attach(this, _ctx.cast(), detach: this);
+
+    try {
+      using((arena) {
+        final cipher = switch (key.length) {
+          16 => EVP_aes_128_ctr(),
+          32 => EVP_aes_256_ctr(),
+          _ => throw ArgumentError('Invalid key length: ${key.length}'),
+        };
+
+        if (iv.length != 16) {
+          throw ArgumentError('IV must be 16 bytes');
+        }
+
+        final keyPtr = arena<Uint8>(key.length);
+        keyPtr.asTypedList(key.length).setAll(0, key);
+
+        final ivPtr = arena<Uint8>(iv.length);
+        ivPtr.asTypedList(iv.length).setAll(0, iv);
+
+        final enc = encrypt ? 1 : 0;
+        if (EVP_CipherInit_ex(_ctx, cipher, nullptr, keyPtr, ivPtr, enc) != 1) {
+          throw Exception('Cipher init failed');
+        }
+      });
+    } catch (_) {
+      EVP_CIPHER_CTX_free(_ctx);
+      _finalizer.detach(this);
+      rethrow;
+    }
+  }
+
+  Uint8List update(Uint8List data) {
+    if (_isClosed) throw StateError('Context is closed');
+    return using((arena) {
+      final inPtr = arena<Uint8>(data.length);
+      inPtr.asTypedList(data.length).setAll(0, data);
+
+      final outPtr = arena<Uint8>(data.length);
+      final outLenPtr = arena<Int>();
+
+      if (EVP_CipherUpdate(_ctx, outPtr, outLenPtr, inPtr, data.length) != 1) {
+        throw Exception('Update failed');
+      }
+      return Uint8List.fromList(outPtr.asTypedList(outLenPtr.value));
+    });
+  }
+
+  Uint8List finish() {
+    if (_isClosed) throw StateError('Context is closed');
+    _isClosed = true;
+    return using((arena) {
+      final outPtr = arena<Uint8>(16);
+      final outLenPtr = arena<Int>();
+
+      if (EVP_CipherFinal_ex(_ctx, outPtr, outLenPtr) != 1) {
+        throw Exception('Final failed');
+      }
+      return Uint8List.fromList(outPtr.asTypedList(outLenPtr.value));
     });
   }
 }

@@ -7,176 +7,23 @@ library;
 
 import 'dart:ffi' as ffi;
 
-@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Size)>()
-external ffi.Pointer<ffi.Void> OPENSSL_malloc(int size);
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
-external void OPENSSL_free(ffi.Pointer<ffi.Void> ptr);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Uint8>, ffi.Size)>()
-external int RAND_bytes(ffi.Pointer<ffi.Uint8> buf, int len);
-
-@ffi.Native<ffi.Pointer<EVP_MD> Function()>()
-external ffi.Pointer<EVP_MD> EVP_sha1();
-
-@ffi.Native<ffi.Pointer<EVP_MD> Function()>()
-external ffi.Pointer<EVP_MD> EVP_sha256();
-
-@ffi.Native<ffi.Pointer<EVP_MD> Function()>()
-external ffi.Pointer<EVP_MD> EVP_sha384();
-
-@ffi.Native<ffi.Pointer<EVP_MD> Function()>()
-external ffi.Pointer<EVP_MD> EVP_sha512();
-
-@ffi.Native<ffi.Pointer<EVP_MD_CTX> Function()>()
-external ffi.Pointer<EVP_MD_CTX> EVP_MD_CTX_new();
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<EVP_MD_CTX>)>()
-external void EVP_MD_CTX_free(ffi.Pointer<EVP_MD_CTX> ctx);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<EVP_MD_CTX>,
-    ffi.Pointer<EVP_MD>,
-    ffi.Pointer<engine_st>,
-  )
->()
-external int EVP_DigestInit_ex(
-  ffi.Pointer<EVP_MD_CTX> ctx,
-  ffi.Pointer<EVP_MD> type,
-  ffi.Pointer<engine_st> engine,
-);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<EVP_MD_CTX>, ffi.Pointer<ffi.Void>, ffi.Size)
->()
-external int EVP_DigestUpdate(
-  ffi.Pointer<EVP_MD_CTX> ctx,
-  ffi.Pointer<ffi.Void> data,
-  int len,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<EVP_MD_CTX>,
-    ffi.Pointer<ffi.Uint8>,
-    ffi.Pointer<ffi.UnsignedInt>,
-  )
->()
-external int EVP_DigestFinal_ex(
-  ffi.Pointer<EVP_MD_CTX> ctx,
-  ffi.Pointer<ffi.Uint8> md_out,
-  ffi.Pointer<ffi.UnsignedInt> out_size,
-);
-
-@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
-external ffi.Pointer<EVP_CIPHER> EVP_aes_128_cbc();
-
-@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
-external ffi.Pointer<EVP_CIPHER> EVP_aes_128_ctr();
-
-@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
-external ffi.Pointer<EVP_CIPHER> EVP_aes_256_cbc();
-
-@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
-external ffi.Pointer<EVP_CIPHER> EVP_aes_256_ctr();
-
-@ffi.Native<ffi.Pointer<EVP_CIPHER_CTX> Function()>()
-external ffi.Pointer<EVP_CIPHER_CTX> EVP_CIPHER_CTX_new();
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<EVP_CIPHER_CTX>)>()
-external void EVP_CIPHER_CTX_free(ffi.Pointer<EVP_CIPHER_CTX> ctx);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<EVP_CIPHER_CTX>,
-    ffi.Pointer<EVP_CIPHER>,
-    ffi.Pointer<engine_st>,
-    ffi.Pointer<ffi.Uint8>,
-    ffi.Pointer<ffi.Uint8>,
-    ffi.Int,
-  )
->()
-external int EVP_CipherInit_ex(
-  ffi.Pointer<EVP_CIPHER_CTX> ctx,
-  ffi.Pointer<EVP_CIPHER> cipher,
-  ffi.Pointer<engine_st> engine,
-  ffi.Pointer<ffi.Uint8> key,
-  ffi.Pointer<ffi.Uint8> iv,
-  int enc,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<EVP_CIPHER_CTX>,
-    ffi.Int,
-    ffi.Int,
-    ffi.Pointer<ffi.Void>,
-  )
->()
-external int EVP_CIPHER_CTX_ctrl(
-  ffi.Pointer<EVP_CIPHER_CTX> ctx,
-  int command,
-  int arg,
-  ffi.Pointer<ffi.Void> ptr,
-);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<EVP_CIPHER_CTX>, ffi.Int)>()
-external int EVP_CIPHER_CTX_set_padding(
-  ffi.Pointer<EVP_CIPHER_CTX> ctx,
-  int pad,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<EVP_CIPHER_CTX>,
-    ffi.Pointer<ffi.Uint8>,
-    ffi.Pointer<ffi.Int>,
-    ffi.Pointer<ffi.Uint8>,
-    ffi.Int,
-  )
->()
-external int EVP_CipherUpdate(
-  ffi.Pointer<EVP_CIPHER_CTX> ctx,
-  ffi.Pointer<ffi.Uint8> out,
-  ffi.Pointer<ffi.Int> out_len,
-  ffi.Pointer<ffi.Uint8> in$,
-  int in_len,
-);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<EVP_CIPHER_CTX>,
-    ffi.Pointer<ffi.Uint8>,
-    ffi.Pointer<ffi.Int>,
-  )
->()
-external int EVP_CipherFinal_ex(
-  ffi.Pointer<EVP_CIPHER_CTX> ctx,
-  ffi.Pointer<ffi.Uint8> out,
-  ffi.Pointer<ffi.Int> out_len,
-);
-
-@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
-external ffi.Pointer<EVP_CIPHER> EVP_aes_128_gcm();
-
-@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
-external ffi.Pointer<EVP_CIPHER> EVP_aes_256_gcm();
-
-@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
-external ffi.Pointer<EVP_CIPHER> EVP_aes_192_cbc();
-
-@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
-external ffi.Pointer<EVP_CIPHER> EVP_aes_192_ctr();
-
 @ffi.Native<ffi.Pointer<EVP_AEAD> Function()>()
 external ffi.Pointer<EVP_AEAD> EVP_aead_aes_128_gcm();
 
 @ffi.Native<ffi.Pointer<EVP_AEAD> Function()>()
-external ffi.Pointer<EVP_AEAD> EVP_aead_aes_192_gcm();
-
-@ffi.Native<ffi.Pointer<EVP_AEAD> Function()>()
 external ffi.Pointer<EVP_AEAD> EVP_aead_aes_256_gcm();
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<EVP_AEAD>)>()
+external int EVP_AEAD_key_length(ffi.Pointer<EVP_AEAD> aead);
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<EVP_AEAD>)>()
+external int EVP_AEAD_nonce_length(ffi.Pointer<EVP_AEAD> aead);
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<EVP_AEAD>)>()
+external int EVP_AEAD_max_overhead(ffi.Pointer<EVP_AEAD> aead);
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<EVP_AEAD>)>()
+external int EVP_AEAD_max_tag_len(ffi.Pointer<EVP_AEAD> aead);
 
 @ffi.Native<
   ffi.Pointer<EVP_AEAD_CTX> Function(
@@ -250,81 +97,457 @@ external int EVP_AEAD_CTX_open(
   int ad_len,
 );
 
-@ffi.Native<ffi.Pointer<RSA> Function()>()
-external ffi.Pointer<RSA> RSA_new();
-
-@ffi.Native<ffi.Void Function(ffi.Pointer<RSA>)>()
-external void RSA_free(ffi.Pointer<RSA> rsa);
-
-@ffi.Native<
-  ffi.Int Function(
-    ffi.Pointer<RSA>,
-    ffi.Int,
-    ffi.Pointer<BIGNUM>,
-    ffi.Pointer<BN_GENCB>,
-  )
->()
-external int RSA_generate_key_ex(
-  ffi.Pointer<RSA> rsa,
-  int bits,
-  ffi.Pointer<BIGNUM> e,
-  ffi.Pointer<BN_GENCB> cb,
-);
-
-@ffi.Native<ffi.Pointer<RSA> Function(ffi.Pointer<RSA>)>()
-external ffi.Pointer<RSA> RSAPublicKey_dup(ffi.Pointer<RSA> rsa);
-
-@ffi.Native<ffi.Pointer<RSA> Function(ffi.Pointer<RSA>)>()
-external ffi.Pointer<RSA> RSAPrivateKey_dup(ffi.Pointer<RSA> rsa);
-
-@ffi.Native<ffi.Int Function(ffi.Pointer<RSA>)>()
-external int RSA_check_key(ffi.Pointer<RSA> rsa);
-
-@ffi.Native<
-  ffi.Pointer<RSA> Function(
-    ffi.Pointer<ffi.Pointer<RSA>>,
-    ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
-    ffi.Long,
-  )
->()
-external ffi.Pointer<RSA> d2i_RSAPublicKey(
-  ffi.Pointer<ffi.Pointer<RSA>> out,
-  ffi.Pointer<ffi.Pointer<ffi.Uint8>> inp,
-  int len,
-);
-
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<RSA>, ffi.Pointer<ffi.Pointer<ffi.Uint8>>)
->()
-external int i2d_RSAPublicKey(
-  ffi.Pointer<RSA> in$,
-  ffi.Pointer<ffi.Pointer<ffi.Uint8>> outp,
-);
-
-@ffi.Native<
-  ffi.Pointer<RSA> Function(
-    ffi.Pointer<ffi.Pointer<RSA>>,
-    ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
-    ffi.Long,
-  )
->()
-external ffi.Pointer<RSA> d2i_RSAPrivateKey(
-  ffi.Pointer<ffi.Pointer<RSA>> out,
-  ffi.Pointer<ffi.Pointer<ffi.Uint8>> inp,
-  int len,
-);
-
 @ffi.Native<ffi.Pointer<BIGNUM> Function()>()
 external ffi.Pointer<BIGNUM> BN_new();
 
 @ffi.Native<ffi.Void Function(ffi.Pointer<BIGNUM>)>()
 external void BN_free(ffi.Pointer<BIGNUM> bn);
 
+@ffi.Native<ffi.Pointer<BIGNUM> Function()>()
+external ffi.Pointer<BIGNUM> BN_value_one();
+
+@ffi.Native<ffi.UnsignedInt Function(ffi.Pointer<BIGNUM>)>()
+external int BN_num_bytes(ffi.Pointer<BIGNUM> bn);
+
 @ffi.Native<ffi.Int Function(ffi.Pointer<BIGNUM>, ffi.Uint64)>()
 external int BN_set_word(ffi.Pointer<BIGNUM> bn, int value);
 
-@ffi.Native<ffi.Uint64 Function(ffi.Pointer<BIGNUM>)>()
-external int BN_get_word(ffi.Pointer<BIGNUM> bn);
+@ffi.Native<
+  ffi.Pointer<BIGNUM> Function(
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Size,
+    ffi.Pointer<BIGNUM>,
+  )
+>()
+external ffi.Pointer<BIGNUM> BN_bin2bn(
+  ffi.Pointer<ffi.Uint8> in$,
+  int len,
+  ffi.Pointer<BIGNUM> ret,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<ffi.Uint8>, ffi.Size, ffi.Pointer<BIGNUM>)
+>()
+external int BN_bn2bin_padded(
+  ffi.Pointer<ffi.Uint8> out,
+  int len,
+  ffi.Pointer<BIGNUM> in$,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BIGNUM>,
+  )
+>()
+external int BN_add(
+  ffi.Pointer<BIGNUM> r,
+  ffi.Pointer<BIGNUM> a,
+  ffi.Pointer<BIGNUM> b,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BIGNUM>,
+  )
+>()
+external int BN_sub(
+  ffi.Pointer<BIGNUM> r,
+  ffi.Pointer<BIGNUM> a,
+  ffi.Pointer<BIGNUM> b,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<BIGNUM>, ffi.Pointer<BIGNUM>)>()
+external int BN_cmp(ffi.Pointer<BIGNUM> a, ffi.Pointer<BIGNUM> b);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<BIGNUM>, ffi.Pointer<BIGNUM>, ffi.Int)
+>()
+external int BN_lshift(ffi.Pointer<BIGNUM> r, ffi.Pointer<BIGNUM> a, int n);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<CBB>)>()
+external void CBB_zero(ffi.Pointer<CBB> cbb);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<CBB>, ffi.Size)>()
+external int CBB_init(ffi.Pointer<CBB> cbb, int initial_capacity);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<CBB>)>()
+external void CBB_cleanup(ffi.Pointer<CBB> cbb);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<CBB>)>()
+external int CBB_flush(ffi.Pointer<CBB> cbb);
+
+@ffi.Native<ffi.Pointer<ffi.Uint8> Function(ffi.Pointer<CBB>)>()
+external ffi.Pointer<ffi.Uint8> CBB_data(ffi.Pointer<CBB> cbb);
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<CBB>)>()
+external int CBB_len(ffi.Pointer<CBB> cbb);
+
+@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
+external ffi.Pointer<EVP_CIPHER> EVP_aes_128_cbc();
+
+@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
+external ffi.Pointer<EVP_CIPHER> EVP_aes_128_ctr();
+
+@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
+external ffi.Pointer<EVP_CIPHER> EVP_aes_256_cbc();
+
+@ffi.Native<ffi.Pointer<EVP_CIPHER> Function()>()
+external ffi.Pointer<EVP_CIPHER> EVP_aes_256_ctr();
+
+@ffi.Native<ffi.Pointer<EVP_CIPHER_CTX> Function()>()
+external ffi.Pointer<EVP_CIPHER_CTX> EVP_CIPHER_CTX_new();
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<EVP_CIPHER_CTX>)>()
+external void EVP_CIPHER_CTX_free(ffi.Pointer<EVP_CIPHER_CTX> ctx);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<EVP_CIPHER_CTX>,
+    ffi.Pointer<EVP_CIPHER>,
+    ffi.Pointer<engine_st>,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Int,
+  )
+>()
+external int EVP_CipherInit_ex(
+  ffi.Pointer<EVP_CIPHER_CTX> ctx,
+  ffi.Pointer<EVP_CIPHER> cipher,
+  ffi.Pointer<engine_st> engine,
+  ffi.Pointer<ffi.Uint8> key,
+  ffi.Pointer<ffi.Uint8> iv,
+  int enc,
+);
+
+@ffi.Native<ffi.UnsignedInt Function(ffi.Pointer<EVP_CIPHER>)>()
+external int EVP_CIPHER_block_size(ffi.Pointer<EVP_CIPHER> cipher);
+
+@ffi.Native<ffi.UnsignedInt Function(ffi.Pointer<EVP_CIPHER>)>()
+external int EVP_CIPHER_iv_length(ffi.Pointer<EVP_CIPHER> cipher);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<EVP_CIPHER_CTX>,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Pointer<ffi.Int>,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Int,
+  )
+>()
+external int EVP_CipherUpdate(
+  ffi.Pointer<EVP_CIPHER_CTX> ctx,
+  ffi.Pointer<ffi.Uint8> out,
+  ffi.Pointer<ffi.Int> out_len,
+  ffi.Pointer<ffi.Uint8> in$,
+  int in_len,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<EVP_CIPHER_CTX>,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Pointer<ffi.Int>,
+  )
+>()
+external int EVP_CipherFinal_ex(
+  ffi.Pointer<EVP_CIPHER_CTX> ctx,
+  ffi.Pointer<ffi.Uint8> out,
+  ffi.Pointer<ffi.Int> out_len,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Size)>()
+external ffi.Pointer<ffi.Void> OPENSSL_malloc(int size);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<ffi.Void>)>()
+external void OPENSSL_free(ffi.Pointer<ffi.Void> ptr);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<ffi.Void>, ffi.Pointer<ffi.Void>, ffi.Size)
+>()
+external int CRYPTO_memcmp(
+  ffi.Pointer<ffi.Void> a,
+  ffi.Pointer<ffi.Void> b,
+  int len,
+);
+
+@ffi.Native<ffi.Pointer<ffi.Void> Function(ffi.Pointer<ffi.Void>, ffi.Size)>()
+external ffi.Pointer<ffi.Void> OPENSSL_memdup(
+  ffi.Pointer<ffi.Void> data,
+  int size,
+);
+
+@ffi.Native<ffi.Int Function()>()
+external int BORINGSSL_self_test();
+
+@ffi.Native<ffi.Pointer<EVP_MD> Function()>()
+external ffi.Pointer<EVP_MD> EVP_sha1();
+
+@ffi.Native<ffi.Pointer<EVP_MD> Function()>()
+external ffi.Pointer<EVP_MD> EVP_sha256();
+
+@ffi.Native<ffi.Pointer<EVP_MD> Function()>()
+external ffi.Pointer<EVP_MD> EVP_sha384();
+
+@ffi.Native<ffi.Pointer<EVP_MD> Function()>()
+external ffi.Pointer<EVP_MD> EVP_sha512();
+
+@ffi.Native<ffi.Pointer<EVP_MD_CTX> Function()>()
+external ffi.Pointer<EVP_MD_CTX> EVP_MD_CTX_new();
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<EVP_MD_CTX>)>()
+external void EVP_MD_CTX_free(ffi.Pointer<EVP_MD_CTX> ctx);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<EVP_MD_CTX>, ffi.Pointer<EVP_MD>)>()
+external int EVP_DigestInit(
+  ffi.Pointer<EVP_MD_CTX> ctx,
+  ffi.Pointer<EVP_MD> type,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<EVP_MD_CTX>, ffi.Pointer<ffi.Void>, ffi.Size)
+>()
+external int EVP_DigestUpdate(
+  ffi.Pointer<EVP_MD_CTX> ctx,
+  ffi.Pointer<ffi.Void> data,
+  int len,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<EVP_MD_CTX>,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Pointer<ffi.UnsignedInt>,
+  )
+>()
+external int EVP_DigestFinal(
+  ffi.Pointer<EVP_MD_CTX> ctx,
+  ffi.Pointer<ffi.Uint8> md_out,
+  ffi.Pointer<ffi.UnsignedInt> out_size,
+);
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<EVP_MD>)>()
+external int EVP_MD_size(ffi.Pointer<EVP_MD> md);
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<EVP_MD_CTX>)>()
+external int EVP_MD_CTX_size(ffi.Pointer<EVP_MD_CTX> ctx);
+
+@ffi.Native<ffi.Pointer<EC_GROUP> Function(ffi.Int)>()
+external ffi.Pointer<EC_GROUP> EC_GROUP_new_by_curve_name(int nid);
+
+@ffi.Native<ffi.Pointer<BIGNUM> Function(ffi.Pointer<EC_GROUP>)>()
+external ffi.Pointer<BIGNUM> EC_GROUP_get0_order(ffi.Pointer<EC_GROUP> group);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<EC_GROUP>)>()
+external int EC_GROUP_get_curve_name(ffi.Pointer<EC_GROUP> group);
+
+@ffi.Native<ffi.UnsignedInt Function(ffi.Pointer<EC_GROUP>)>()
+external int EC_GROUP_get_degree(ffi.Pointer<EC_GROUP> group);
+
+@ffi.Native<ffi.Pointer<EC_POINT> Function(ffi.Pointer<EC_GROUP>)>()
+external ffi.Pointer<EC_POINT> EC_POINT_new(ffi.Pointer<EC_GROUP> group);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<EC_POINT>)>()
+external void EC_POINT_free(ffi.Pointer<EC_POINT> point);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<EC_GROUP>,
+    ffi.Pointer<EC_POINT>,
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<bignum_ctx>,
+  )
+>()
+external int EC_POINT_get_affine_coordinates_GFp(
+  ffi.Pointer<EC_GROUP> group,
+  ffi.Pointer<EC_POINT> point,
+  ffi.Pointer<BIGNUM> x,
+  ffi.Pointer<BIGNUM> y,
+  ffi.Pointer<bignum_ctx> ctx,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<CBB>,
+    ffi.Pointer<EC_GROUP>,
+    ffi.Pointer<EC_POINT>,
+    ffi.UnsignedInt,
+    ffi.Pointer<bignum_ctx>,
+  )
+>(symbol: 'EC_POINT_point2cbb')
+external int _EC_POINT_point2cbb(
+  ffi.Pointer<CBB> out,
+  ffi.Pointer<EC_GROUP> group,
+  ffi.Pointer<EC_POINT> point,
+  int form,
+  ffi.Pointer<bignum_ctx> ctx,
+);
+
+int EC_POINT_point2cbb(
+  ffi.Pointer<CBB> out,
+  ffi.Pointer<EC_GROUP> group,
+  ffi.Pointer<EC_POINT> point,
+  point_conversion_form_t form,
+  ffi.Pointer<bignum_ctx> ctx,
+) => _EC_POINT_point2cbb(out, group, point, form.value, ctx);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<EC_GROUP>,
+    ffi.Pointer<EC_POINT>,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Size,
+    ffi.Pointer<bignum_ctx>,
+  )
+>()
+external int EC_POINT_oct2point(
+  ffi.Pointer<EC_GROUP> group,
+  ffi.Pointer<EC_POINT> point,
+  ffi.Pointer<ffi.Uint8> buf,
+  int len,
+  ffi.Pointer<bignum_ctx> ctx,
+);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<EC_GROUP>)>()
+external void EC_GROUP_free(ffi.Pointer<EC_GROUP> group);
+
+@ffi.Native<ffi.Pointer<EC_KEY> Function(ffi.Int)>()
+external ffi.Pointer<EC_KEY> EC_KEY_new_by_curve_name(int nid);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<EC_KEY>)>()
+external void EC_KEY_free(ffi.Pointer<EC_KEY> key);
+
+@ffi.Native<ffi.Pointer<EC_GROUP> Function(ffi.Pointer<EC_KEY>)>()
+external ffi.Pointer<EC_GROUP> EC_KEY_get0_group(ffi.Pointer<EC_KEY> key);
+
+@ffi.Native<ffi.Pointer<BIGNUM> Function(ffi.Pointer<EC_KEY>)>()
+external ffi.Pointer<BIGNUM> EC_KEY_get0_private_key(ffi.Pointer<EC_KEY> key);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<EC_KEY>, ffi.Pointer<BIGNUM>)>()
+external int EC_KEY_set_private_key(
+  ffi.Pointer<EC_KEY> key,
+  ffi.Pointer<BIGNUM> priv,
+);
+
+@ffi.Native<ffi.Pointer<EC_POINT> Function(ffi.Pointer<EC_KEY>)>()
+external ffi.Pointer<EC_POINT> EC_KEY_get0_public_key(ffi.Pointer<EC_KEY> key);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<EC_KEY>, ffi.Pointer<EC_POINT>)>()
+external int EC_KEY_set_public_key(
+  ffi.Pointer<EC_KEY> key,
+  ffi.Pointer<EC_POINT> pub,
+);
+
+@ffi.Native<ffi.UnsignedInt Function(ffi.Pointer<EC_KEY>)>()
+external int EC_KEY_get_enc_flags(ffi.Pointer<EC_KEY> key);
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<EC_KEY>, ffi.UnsignedInt)>()
+external void EC_KEY_set_enc_flags(ffi.Pointer<EC_KEY> key, int flags);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<EC_KEY>)>()
+external int EC_KEY_check_key(ffi.Pointer<EC_KEY> key);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<EC_KEY>,
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BIGNUM>,
+  )
+>()
+external int EC_KEY_set_public_key_affine_coordinates(
+  ffi.Pointer<EC_KEY> key,
+  ffi.Pointer<BIGNUM> x,
+  ffi.Pointer<BIGNUM> y,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<EC_KEY>)>()
+external int EC_KEY_generate_key(ffi.Pointer<EC_KEY> key);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<ffi.Void>,
+    ffi.Size,
+    ffi.Pointer<EC_POINT>,
+    ffi.Pointer<EC_KEY>,
+    ffi.Pointer<
+      ffi.NativeFunction<
+        ffi.Pointer<ffi.Void> Function(
+          ffi.Pointer<ffi.Void> in$,
+          ffi.Size inlen,
+          ffi.Pointer<ffi.Void> out,
+          ffi.Pointer<ffi.Size> outlen,
+        )
+      >
+    >,
+  )
+>()
+external int ECDH_compute_key(
+  ffi.Pointer<ffi.Void> out,
+  int outlen,
+  ffi.Pointer<EC_POINT> pub_key,
+  ffi.Pointer<EC_KEY> priv_key,
+  ffi.Pointer<
+    ffi.NativeFunction<
+      ffi.Pointer<ffi.Void> Function(
+        ffi.Pointer<ffi.Void> in$,
+        ffi.Size inlen,
+        ffi.Pointer<ffi.Void> out,
+        ffi.Pointer<ffi.Size> outlen,
+      )
+    >
+  >
+  kdf,
+);
+
+@ffi.Native<ffi.Pointer<ECDSA_SIG> Function()>()
+external ffi.Pointer<ECDSA_SIG> ECDSA_SIG_new();
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<ECDSA_SIG>)>()
+external void ECDSA_SIG_free(ffi.Pointer<ECDSA_SIG> sig);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<ECDSA_SIG>,
+    ffi.Pointer<ffi.Pointer<BIGNUM>>,
+    ffi.Pointer<ffi.Pointer<BIGNUM>>,
+  )
+>()
+external void ECDSA_SIG_get0(
+  ffi.Pointer<ECDSA_SIG> sig,
+  ffi.Pointer<ffi.Pointer<BIGNUM>> out_r,
+  ffi.Pointer<ffi.Pointer<BIGNUM>> out_s,
+);
+
+@ffi.Native<ffi.Pointer<ECDSA_SIG> Function(ffi.Pointer<CBS>)>()
+external ffi.Pointer<ECDSA_SIG> ECDSA_SIG_parse(ffi.Pointer<CBS> cbs);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<CBB>, ffi.Pointer<ECDSA_SIG>)>()
+external int ECDSA_SIG_marshal(
+  ffi.Pointer<CBB> cbb,
+  ffi.Pointer<ECDSA_SIG> sig,
+);
+
+@ffi.Native<ffi.Uint32 Function()>()
+external int ERR_get_error();
+
+@ffi.Native<ffi.Uint32 Function()>()
+external int ERR_peek_error();
+
+@ffi.Native<
+  ffi.Pointer<ffi.Char> Function(ffi.Uint32, ffi.Pointer<ffi.Char>, ffi.Size)
+>()
+external ffi.Pointer<ffi.Char> ERR_error_string_n(
+  int packed_error,
+  ffi.Pointer<ffi.Char> buf,
+  int len,
+);
+
+@ffi.Native<ffi.Void Function()>()
+external void ERR_clear_error();
 
 @ffi.Native<ffi.Pointer<EVP_PKEY> Function()>()
 external ffi.Pointer<EVP_PKEY> EVP_PKEY_new();
@@ -332,16 +555,140 @@ external ffi.Pointer<EVP_PKEY> EVP_PKEY_new();
 @ffi.Native<ffi.Void Function(ffi.Pointer<EVP_PKEY>)>()
 external void EVP_PKEY_free(ffi.Pointer<EVP_PKEY> pkey);
 
+@ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY>)>()
+external int EVP_PKEY_id(ffi.Pointer<EVP_PKEY> pkey);
+
 @ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY>, ffi.Pointer<RSA>)>()
 external int EVP_PKEY_set1_RSA(
   ffi.Pointer<EVP_PKEY> pkey,
   ffi.Pointer<RSA> key,
 );
 
-@ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY>, ffi.Pointer<RSA>)>()
-external int EVP_PKEY_assign_RSA(
+@ffi.Native<ffi.Pointer<RSA> Function(ffi.Pointer<EVP_PKEY>)>()
+external ffi.Pointer<RSA> EVP_PKEY_get1_RSA(ffi.Pointer<EVP_PKEY> pkey);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY>, ffi.Pointer<EC_KEY>)>()
+external int EVP_PKEY_set1_EC_KEY(
   ffi.Pointer<EVP_PKEY> pkey,
-  ffi.Pointer<RSA> key,
+  ffi.Pointer<EC_KEY> key,
+);
+
+@ffi.Native<ffi.Pointer<EC_KEY> Function(ffi.Pointer<EVP_PKEY>)>()
+external ffi.Pointer<EC_KEY> EVP_PKEY_get1_EC_KEY(ffi.Pointer<EVP_PKEY> pkey);
+
+@ffi.Native<ffi.Pointer<EVP_PKEY> Function(ffi.Pointer<CBS>)>()
+external ffi.Pointer<EVP_PKEY> EVP_parse_public_key(ffi.Pointer<CBS> cbs);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<CBB>, ffi.Pointer<EVP_PKEY>)>()
+external int EVP_marshal_public_key(
+  ffi.Pointer<CBB> cbb,
+  ffi.Pointer<EVP_PKEY> key,
+);
+
+@ffi.Native<ffi.Pointer<EVP_PKEY> Function(ffi.Pointer<CBS>)>()
+external ffi.Pointer<EVP_PKEY> EVP_parse_private_key(ffi.Pointer<CBS> cbs);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<CBB>, ffi.Pointer<EVP_PKEY>)>()
+external int EVP_marshal_private_key(
+  ffi.Pointer<CBB> cbb,
+  ffi.Pointer<EVP_PKEY> key,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<EVP_MD_CTX>,
+    ffi.Pointer<ffi.Pointer<EVP_PKEY_CTX>>,
+    ffi.Pointer<EVP_MD>,
+    ffi.Pointer<engine_st>,
+    ffi.Pointer<EVP_PKEY>,
+  )
+>()
+external int EVP_DigestSignInit(
+  ffi.Pointer<EVP_MD_CTX> ctx,
+  ffi.Pointer<ffi.Pointer<EVP_PKEY_CTX>> pctx,
+  ffi.Pointer<EVP_MD> type,
+  ffi.Pointer<engine_st> e,
+  ffi.Pointer<EVP_PKEY> pkey,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<EVP_MD_CTX>, ffi.Pointer<ffi.Void>, ffi.Size)
+>()
+external int EVP_DigestSignUpdate(
+  ffi.Pointer<EVP_MD_CTX> ctx,
+  ffi.Pointer<ffi.Void> data,
+  int len,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<EVP_MD_CTX>,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Pointer<ffi.Size>,
+  )
+>()
+external int EVP_DigestSignFinal(
+  ffi.Pointer<EVP_MD_CTX> ctx,
+  ffi.Pointer<ffi.Uint8> out_sig,
+  ffi.Pointer<ffi.Size> out_sig_len,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<EVP_MD_CTX>,
+    ffi.Pointer<ffi.Pointer<EVP_PKEY_CTX>>,
+    ffi.Pointer<EVP_MD>,
+    ffi.Pointer<engine_st>,
+    ffi.Pointer<EVP_PKEY>,
+  )
+>()
+external int EVP_DigestVerifyInit(
+  ffi.Pointer<EVP_MD_CTX> ctx,
+  ffi.Pointer<ffi.Pointer<EVP_PKEY_CTX>> pctx,
+  ffi.Pointer<EVP_MD> type,
+  ffi.Pointer<engine_st> e,
+  ffi.Pointer<EVP_PKEY> pkey,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<EVP_MD_CTX>, ffi.Pointer<ffi.Void>, ffi.Size)
+>()
+external int EVP_DigestVerifyUpdate(
+  ffi.Pointer<EVP_MD_CTX> ctx,
+  ffi.Pointer<ffi.Void> data,
+  int len,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<EVP_MD_CTX>, ffi.Pointer<ffi.Uint8>, ffi.Size)
+>()
+external int EVP_DigestVerifyFinal(
+  ffi.Pointer<EVP_MD_CTX> ctx,
+  ffi.Pointer<ffi.Uint8> sig,
+  int sig_len,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<ffi.Char>,
+    ffi.Size,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Size,
+    ffi.Uint32,
+    ffi.Pointer<EVP_MD>,
+    ffi.Size,
+    ffi.Pointer<ffi.Uint8>,
+  )
+>()
+external int PKCS5_PBKDF2_HMAC(
+  ffi.Pointer<ffi.Char> password,
+  int password_len,
+  ffi.Pointer<ffi.Uint8> salt,
+  int salt_len,
+  int iterations,
+  ffi.Pointer<EVP_MD> digest,
+  int key_len,
+  ffi.Pointer<ffi.Uint8> out_key,
 );
 
 @ffi.Native<
@@ -404,8 +751,20 @@ external int EVP_PKEY_CTX_set_rsa_padding(
   int padding,
 );
 
+@ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY_CTX>, ffi.Int)>()
+external int EVP_PKEY_CTX_set_rsa_pss_saltlen(
+  ffi.Pointer<EVP_PKEY_CTX> ctx,
+  int salt_len,
+);
+
 @ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY_CTX>, ffi.Pointer<EVP_MD>)>()
 external int EVP_PKEY_CTX_set_rsa_oaep_md(
+  ffi.Pointer<EVP_PKEY_CTX> ctx,
+  ffi.Pointer<EVP_MD> md,
+);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY_CTX>, ffi.Pointer<EVP_MD>)>()
+external int EVP_PKEY_CTX_set_rsa_mgf1_md(
   ffi.Pointer<EVP_PKEY_CTX> ctx,
   ffi.Pointer<EVP_MD> md,
 );
@@ -419,13 +778,193 @@ external int EVP_PKEY_CTX_set0_rsa_oaep_label(
   int label_len,
 );
 
+@ffi.Native<ffi.Int Function(ffi.Pointer<EVP_PKEY>, ffi.Int)>()
+external int EVP_PKEY_set_type(ffi.Pointer<EVP_PKEY> pkey, int type);
+
 @ffi.Native<
-  ffi.Int Function(ffi.Pointer<RSA>, ffi.Pointer<ffi.Pointer<ffi.Uint8>>)
+  ffi.Int Function(
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Size,
+    ffi.Pointer<EVP_MD>,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Size,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Size,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Size,
+  )
 >()
-external int i2d_RSA_PUBKEY(
-  ffi.Pointer<RSA> rsa,
-  ffi.Pointer<ffi.Pointer<ffi.Uint8>> outp,
+external int HKDF(
+  ffi.Pointer<ffi.Uint8> out_key,
+  int out_len,
+  ffi.Pointer<EVP_MD> digest,
+  ffi.Pointer<ffi.Uint8> secret,
+  int secret_len,
+  ffi.Pointer<ffi.Uint8> salt,
+  int salt_len,
+  ffi.Pointer<ffi.Uint8> info,
+  int info_len,
 );
+
+@ffi.Native<ffi.Pointer<HMAC_CTX> Function()>()
+external ffi.Pointer<HMAC_CTX> HMAC_CTX_new();
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<HMAC_CTX>)>()
+external void HMAC_CTX_free(ffi.Pointer<HMAC_CTX> ctx);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<HMAC_CTX>,
+    ffi.Pointer<ffi.Void>,
+    ffi.Size,
+    ffi.Pointer<EVP_MD>,
+    ffi.Pointer<engine_st>,
+  )
+>()
+external int HMAC_Init_ex(
+  ffi.Pointer<HMAC_CTX> ctx,
+  ffi.Pointer<ffi.Void> key,
+  int key_len,
+  ffi.Pointer<EVP_MD> md,
+  ffi.Pointer<engine_st> impl,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<HMAC_CTX>, ffi.Pointer<ffi.Uint8>, ffi.Size)
+>()
+external int HMAC_Update(
+  ffi.Pointer<HMAC_CTX> ctx,
+  ffi.Pointer<ffi.Uint8> data,
+  int data_len,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<HMAC_CTX>,
+    ffi.Pointer<ffi.Uint8>,
+    ffi.Pointer<ffi.UnsignedInt>,
+  )
+>()
+external int HMAC_Final(
+  ffi.Pointer<HMAC_CTX> ctx,
+  ffi.Pointer<ffi.Uint8> out,
+  ffi.Pointer<ffi.UnsignedInt> out_len,
+);
+
+@ffi.Native<ffi.Size Function(ffi.Pointer<HMAC_CTX>)>()
+external int HMAC_size(ffi.Pointer<HMAC_CTX> ctx);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<ffi.Uint8>, ffi.Size)>()
+external int RAND_bytes(ffi.Pointer<ffi.Uint8> buf, int len);
+
+@ffi.Native<ffi.Pointer<RSA> Function()>()
+external ffi.Pointer<RSA> RSA_new();
+
+@ffi.Native<ffi.Void Function(ffi.Pointer<RSA>)>()
+external void RSA_free(ffi.Pointer<RSA> rsa);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<RSA>,
+    ffi.Pointer<ffi.Pointer<BIGNUM>>,
+    ffi.Pointer<ffi.Pointer<BIGNUM>>,
+    ffi.Pointer<ffi.Pointer<BIGNUM>>,
+  )
+>()
+external void RSA_get0_key(
+  ffi.Pointer<RSA> rsa,
+  ffi.Pointer<ffi.Pointer<BIGNUM>> out_n,
+  ffi.Pointer<ffi.Pointer<BIGNUM>> out_e,
+  ffi.Pointer<ffi.Pointer<BIGNUM>> out_d,
+);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<RSA>,
+    ffi.Pointer<ffi.Pointer<BIGNUM>>,
+    ffi.Pointer<ffi.Pointer<BIGNUM>>,
+  )
+>()
+external void RSA_get0_factors(
+  ffi.Pointer<RSA> rsa,
+  ffi.Pointer<ffi.Pointer<BIGNUM>> out_p,
+  ffi.Pointer<ffi.Pointer<BIGNUM>> out_q,
+);
+
+@ffi.Native<
+  ffi.Void Function(
+    ffi.Pointer<RSA>,
+    ffi.Pointer<ffi.Pointer<BIGNUM>>,
+    ffi.Pointer<ffi.Pointer<BIGNUM>>,
+    ffi.Pointer<ffi.Pointer<BIGNUM>>,
+  )
+>()
+external void RSA_get0_crt_params(
+  ffi.Pointer<RSA> rsa,
+  ffi.Pointer<ffi.Pointer<BIGNUM>> out_dmp1,
+  ffi.Pointer<ffi.Pointer<BIGNUM>> out_dmq1,
+  ffi.Pointer<ffi.Pointer<BIGNUM>> out_iqmp,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<RSA>,
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BIGNUM>,
+  )
+>()
+external int RSA_set0_key(
+  ffi.Pointer<RSA> rsa,
+  ffi.Pointer<BIGNUM> n,
+  ffi.Pointer<BIGNUM> e,
+  ffi.Pointer<BIGNUM> d,
+);
+
+@ffi.Native<
+  ffi.Int Function(ffi.Pointer<RSA>, ffi.Pointer<BIGNUM>, ffi.Pointer<BIGNUM>)
+>()
+external int RSA_set0_factors(
+  ffi.Pointer<RSA> rsa,
+  ffi.Pointer<BIGNUM> p,
+  ffi.Pointer<BIGNUM> q,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<RSA>,
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BIGNUM>,
+  )
+>()
+external int RSA_set0_crt_params(
+  ffi.Pointer<RSA> rsa,
+  ffi.Pointer<BIGNUM> dmp1,
+  ffi.Pointer<BIGNUM> dmq1,
+  ffi.Pointer<BIGNUM> iqmp,
+);
+
+@ffi.Native<
+  ffi.Int Function(
+    ffi.Pointer<RSA>,
+    ffi.Int,
+    ffi.Pointer<BIGNUM>,
+    ffi.Pointer<BN_GENCB>,
+  )
+>()
+external int RSA_generate_key_ex(
+  ffi.Pointer<RSA> rsa,
+  int bits,
+  ffi.Pointer<BIGNUM> e,
+  ffi.Pointer<BN_GENCB> cb,
+);
+
+@ffi.Native<ffi.Pointer<RSA> Function(ffi.Pointer<RSA>)>()
+external ffi.Pointer<RSA> RSAPublicKey_dup(ffi.Pointer<RSA> rsa);
+
+@ffi.Native<ffi.Int Function(ffi.Pointer<RSA>)>()
+external int RSA_check_key(ffi.Pointer<RSA> rsa);
 
 @ffi.Native<
   ffi.Pointer<RSA> Function(
@@ -434,11 +973,13 @@ external int i2d_RSA_PUBKEY(
     ffi.Long,
   )
 >()
-external ffi.Pointer<RSA> d2i_RSA_PUBKEY(
+external ffi.Pointer<RSA> d2i_RSAPrivateKey(
   ffi.Pointer<ffi.Pointer<RSA>> out,
   ffi.Pointer<ffi.Pointer<ffi.Uint8>> inp,
   int len,
 );
+
+final class bignum_ctx extends ffi.Opaque {}
 
 final class bignum_st extends ffi.Opaque {}
 
@@ -447,6 +988,35 @@ typedef BIGNUM = bignum_st;
 final class bn_gencb_st extends ffi.Opaque {}
 
 typedef BN_GENCB = bn_gencb_st;
+
+final class cbb_st extends ffi.Opaque {}
+
+typedef CBB = cbb_st;
+
+final class cbs_st extends ffi.Struct {
+  external ffi.Pointer<ffi.Uint8> data;
+
+  @ffi.Size()
+  external int len;
+}
+
+typedef CBS = cbs_st;
+
+final class ec_group_st extends ffi.Opaque {}
+
+typedef EC_GROUP = ec_group_st;
+
+final class ec_key_st extends ffi.Opaque {}
+
+typedef EC_KEY = ec_key_st;
+
+final class ec_point_st extends ffi.Opaque {}
+
+typedef EC_POINT = ec_point_st;
+
+final class ecdsa_sig_st extends ffi.Opaque {}
+
+typedef ECDSA_SIG = ecdsa_sig_st;
 
 final class engine_st extends ffi.Opaque {}
 
@@ -482,6 +1052,52 @@ final class evp_pkey_st extends ffi.Opaque {}
 
 typedef EVP_PKEY = evp_pkey_st;
 
+final class hmac_ctx_st extends ffi.Opaque {}
+
+typedef HMAC_CTX = hmac_ctx_st;
+
 final class rsa_st extends ffi.Opaque {}
 
 typedef RSA = rsa_st;
+
+enum point_conversion_form_t {
+  POINT_CONVERSION_COMPRESSED(2),
+  POINT_CONVERSION_UNCOMPRESSED(4),
+  POINT_CONVERSION_HYBRID(6);
+
+  final int value;
+  const point_conversion_form_t(this.value);
+
+  static point_conversion_form_t fromValue(int value) => switch (value) {
+    2 => POINT_CONVERSION_COMPRESSED,
+    4 => POINT_CONVERSION_UNCOMPRESSED,
+    6 => POINT_CONVERSION_HYBRID,
+    _ => throw ArgumentError(
+      'Unknown value for point_conversion_form_t: $value',
+    ),
+  };
+}
+
+const int ERR_LIB_HKDF = 31;
+
+const int AES_BLOCK_SIZE = 16;
+
+const int EC_PKEY_NO_PUBKEY = 2;
+
+const int NID_X9_62_prime256v1 = 415;
+
+const int NID_secp384r1 = 715;
+
+const int NID_secp521r1 = 716;
+
+const int EVP_PKEY_RSA = 6;
+
+const int EVP_PKEY_EC = 408;
+
+const int HKDF_R_OUTPUT_TOO_LARGE = 100;
+
+const int RSA_PKCS1_PADDING = 1;
+
+const int RSA_PKCS1_OAEP_PADDING = 4;
+
+const int RSA_PKCS1_PSS_PADDING = 6;

@@ -1,0 +1,64 @@
+import 'dart:ffi';
+import 'dart:typed_data';
+
+import 'package:ffi/ffi.dart';
+
+import 'bindings.g.dart';
+
+// CBB struct size (conservative estimate, actual size varies by platform but is < 64 bytes)
+const int _cbbSize = 64;
+
+void checkOp(bool condition, {String? message, String? fallback}) {
+  if (!condition) {
+    // Always extract the error to ensure we clear the error queue.
+    final err = _extractError();
+    message ??= err ?? fallback ?? 'unknown error';
+    throw Exception(message);
+  }
+}
+
+void checkOpIsOne(int retval, {String? message, String? fallback}) =>
+    checkOp(retval == 1, message: message, fallback: fallback);
+
+String? _extractError() {
+  // Simple error extraction (can be expanded)
+  final err = ERR_peek_error();
+  if (err == 0) return null;
+  ERR_clear_error();
+  return 'BoringSSL Error: $err';
+}
+
+/// Helper to allocate a CBB, init it, run [fn], and return bytes.
+Uint8List runCBB(void Function(Pointer<CBB> cbb) fn, {int sizeHint = 64}) {
+  return using((arena) {
+    // Allocate raw bytes for CBB (opaque struct)
+    final cbb = arena<Uint8>(_cbbSize).cast<CBB>();
+    CBB_zero(cbb);
+    if (CBB_init(cbb, sizeHint) != 1) {
+      throw Exception('CBB init failed');
+    }
+    try {
+      fn(cbb);
+      if (CBB_flush(cbb) != 1) {
+        throw Exception('CBB flush failed');
+      }
+      final len = CBB_len(cbb);
+      final data = CBB_data(cbb);
+      return Uint8List.fromList(data.asTypedList(len));
+    } finally {
+      CBB_cleanup(cbb);
+    }
+  });
+}
+
+/// Constant-time comparison of two buffers.
+bool constantTimeEq(Uint8List a, Uint8List b) {
+  if (a.length != b.length) return false;
+  return using((arena) {
+    final aPtr = arena<Uint8>(a.length);
+    aPtr.asTypedList(a.length).setAll(0, a);
+    final bPtr = arena<Uint8>(b.length);
+    bPtr.asTypedList(b.length).setAll(0, b);
+    return CRYPTO_memcmp(aPtr.cast(), bPtr.cast(), a.length) == 0;
+  });
+}

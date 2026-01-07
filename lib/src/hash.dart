@@ -15,6 +15,9 @@ class Hash {
 
   final String _algorithmName;
 
+  /// Start a streaming hash computation.
+  HashContext start() => HashContext._(_algorithmName);
+
   /// Compute the hash of [data].
   Uint8List digest(List<int> data) {
     return using((arena) {
@@ -24,15 +27,9 @@ class Hash {
       }
 
       try {
-        final md = switch (_algorithmName) {
-          'SHA-1' => EVP_sha1(),
-          'SHA-256' => EVP_sha256(),
-          'SHA-384' => EVP_sha384(),
-          'SHA-512' => EVP_sha512(),
-          _ => throw ArgumentError('Unsupported algorithm: $_algorithmName'),
-        };
+        final md = _getEvpMd(_algorithmName);
 
-        if (EVP_DigestInit_ex(ctx, md, nullptr) != 1) {
+        if (EVP_DigestInit(ctx, md) != 1) {
           throw Exception('Digest init failed for $_algorithmName');
         }
 
@@ -48,7 +45,7 @@ class Hash {
         final outPtr = arena<Uint8>(64);
         final outLenPtr = arena<UnsignedInt>();
 
-        if (EVP_DigestFinal_ex(ctx, outPtr, outLenPtr) != 1) {
+        if (EVP_DigestFinal(ctx, outPtr, outLenPtr) != 1) {
           throw Exception('Digest final failed');
         }
 
@@ -57,6 +54,70 @@ class Hash {
       } finally {
         EVP_MD_CTX_free(ctx);
       }
+    });
+  }
+
+  static Pointer<EVP_MD> _getEvpMd(String algorithm) {
+    return switch (algorithm) {
+      'SHA-1' => EVP_sha1(),
+      'SHA-256' => EVP_sha256(),
+      'SHA-384' => EVP_sha384(),
+      'SHA-512' => EVP_sha512(),
+      _ => throw ArgumentError('Unsupported algorithm: $algorithm'),
+    };
+  }
+}
+
+/// Streaming hash context.
+class HashContext implements Finalizable {
+  static final _finalizer = NativeFinalizer(
+    Native.addressOf<NativeFunction<Void Function(Pointer<EVP_MD_CTX>)>>(
+      EVP_MD_CTX_free,
+    ).cast(),
+  );
+
+  final Pointer<EVP_MD_CTX> _ctx;
+  bool _isClosed = false;
+
+  HashContext._(String algorithm) : _ctx = EVP_MD_CTX_new() {
+    if (_ctx == nullptr) {
+      throw Exception('Failed to create context');
+    }
+    _finalizer.attach(this, _ctx.cast(), detach: this);
+
+    try {
+      final md = Hash._getEvpMd(algorithm);
+      if (EVP_DigestInit(_ctx, md) != 1) {
+        throw Exception('Digest init failed');
+      }
+    } catch (_) {
+      EVP_MD_CTX_free(_ctx);
+      _finalizer.detach(this);
+      rethrow;
+    }
+  }
+
+  void update(List<int> data) {
+    if (_isClosed) throw StateError('Context is closed');
+    using((arena) {
+      final ptr = arena<Uint8>(data.length);
+      ptr.asTypedList(data.length).setAll(0, data);
+      if (EVP_DigestUpdate(_ctx, ptr.cast(), data.length) != 1) {
+        throw Exception('Update failed');
+      }
+    });
+  }
+
+  Uint8List finish() {
+    if (_isClosed) throw StateError('Context is closed');
+    _isClosed = true;
+    return using((arena) {
+      final out = arena<Uint8>(64);
+      final len = arena<UnsignedInt>();
+      if (EVP_DigestFinal(_ctx, out, len) != 1) {
+        throw Exception('Final failed');
+      }
+      return Uint8List.fromList(out.asTypedList(len.value));
     });
   }
 }
