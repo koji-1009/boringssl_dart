@@ -113,4 +113,46 @@ final config = FfiGenerator(
   }),
 );
 
-void main() => config.generate();
+// Helper to setup BoringSSL source
+Future<void> setupBoringSsl() async {
+  // Assume running from package root
+  final boringsslPath = 'third_party/boringssl';
+  final commitFile = File('native/boringssl_commit.txt');
+
+  if (!commitFile.existsSync()) {
+    throw Exception('Missing config: native/boringssl_commit.txt');
+  }
+  final targetCommit = commitFile.readAsStringSync().trim();
+
+  if (!Directory(boringsslPath).existsSync()) {
+    print('Cloning BoringSSL...');
+    await _runGit([
+      'clone',
+      'https://github.com/google/boringssl.git',
+      boringsslPath,
+    ]);
+  } else {
+    try {
+      await _runGit(['fetch', 'origin'], workingDirectory: boringsslPath);
+    } catch (_) {}
+  }
+
+  print('Checking out $targetCommit...');
+  await _runGit(['checkout', targetCommit], workingDirectory: boringsslPath);
+}
+
+Future<void> _runGit(List<String> args, {String? workingDirectory}) async {
+  final result = await Process.run(
+    'git',
+    args,
+    workingDirectory: workingDirectory,
+  );
+  if (result.exitCode != 0) {
+    throw Exception('git ${args.join(" ")} failed: ${result.stderr}');
+  }
+}
+
+void main() async {
+  await setupBoringSsl();
+  config.generate();
+}

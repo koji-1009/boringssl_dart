@@ -314,14 +314,6 @@ external ffi.Pointer<RSA> d2i_RSAPrivateKey(
   int len,
 );
 
-@ffi.Native<
-  ffi.Int Function(ffi.Pointer<RSA>, ffi.Pointer<ffi.Pointer<ffi.Uint8>>)
->()
-external int i2d_RSAPrivateKey(
-  ffi.Pointer<RSA> in$,
-  ffi.Pointer<ffi.Pointer<ffi.Uint8>> outp,
-);
-
 @ffi.Native<ffi.Pointer<BIGNUM> Function()>()
 external ffi.Pointer<BIGNUM> BN_new();
 
@@ -351,9 +343,6 @@ external int EVP_PKEY_assign_RSA(
   ffi.Pointer<EVP_PKEY> pkey,
   ffi.Pointer<RSA> key,
 );
-
-@ffi.Native<ffi.Pointer<RSA> Function(ffi.Pointer<EVP_PKEY>)>()
-external ffi.Pointer<RSA> EVP_PKEY_get1_RSA(ffi.Pointer<EVP_PKEY> pkey);
 
 @ffi.Native<
   ffi.Pointer<EVP_PKEY_CTX> Function(
@@ -428,21 +417,6 @@ external int EVP_PKEY_CTX_set0_rsa_oaep_label(
   ffi.Pointer<EVP_PKEY_CTX> ctx,
   ffi.Pointer<ffi.Uint8> label,
   int label_len,
-);
-
-@ffi.Native<
-  ffi.Pointer<EVP_PKEY> Function(
-    ffi.Int,
-    ffi.Pointer<ffi.Pointer<EVP_PKEY>>,
-    ffi.Pointer<ffi.Pointer<ffi.Uint8>>,
-    ffi.Long,
-  )
->()
-external ffi.Pointer<EVP_PKEY> d2i_PrivateKey(
-  int type,
-  ffi.Pointer<ffi.Pointer<EVP_PKEY>> out,
-  ffi.Pointer<ffi.Pointer<ffi.Uint8>> inp,
-  int len,
 );
 
 @ffi.Native<

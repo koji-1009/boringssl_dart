@@ -8,3 +8,6 @@ pubspec.lock
 
 .DS_Store
 build/
+
+# BoringSSL is managed by hook/build.dart, not git submodules
+third_party/boringssl/
