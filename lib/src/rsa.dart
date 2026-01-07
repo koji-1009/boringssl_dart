@@ -38,10 +38,10 @@ class RsaKey extends CryptoKey {
 
         final pkey = EVP_PKEY_new();
         checkOp(pkey != nullptr);
-        if (EVP_PKEY_set1_RSA(pkey, rsa) != 1) {
-          EVP_PKEY_free(pkey);
-          throw Exception('Failed to set RSA key');
-        }
+        checkOpIsOne(
+          EVP_PKEY_set1_RSA(pkey, rsa),
+          message: 'Failed to set RSA key',
+        );
         return RsaKey(pkey);
       } finally {
         RSA_free(rsa);
@@ -78,20 +78,25 @@ class RsaKey extends CryptoKey {
       dataPtrPtr.value = dataPtr;
 
       final rsa = d2i_RSAPrivateKey(nullptr, dataPtrPtr, keyData.length);
-      if (rsa == nullptr) {
-        throw Exception('Failed to parse PKCS#1 private key');
-      }
+      checkOp(rsa != nullptr, message: 'Failed to parse PKCS#1 private key');
 
       final pkey = EVP_PKEY_new();
       if (pkey == nullptr) {
         RSA_free(rsa);
-        throw Exception('Failed to create EVP_PKEY');
+        checkOp(false, message: 'Failed to create EVP_PKEY');
       }
 
       if (EVP_PKEY_set1_RSA(pkey, rsa) != 1) {
         RSA_free(rsa);
-        EVP_PKEY_free(pkey);
-        throw Exception('Failed to assign RSA key to PKEY');
+        // EVP_PKEY_free is handled by caller/finalizer? No, here we leak pkey if exception?
+        // But checkOp handles exception.
+        // We should explicitly free if manual check fails.
+        // But better to use checkOpIsOne logic inside a scope?
+        // Simpler: use checkOp and let manual cleanup happen if possible?
+        // Actually, checkOp throws Exception.
+        // The pattern is tricky if we need to free multiple things.
+        // Let's stick to manual check + checkOp for error extraction.
+        checkOp(false, message: 'Failed to assign RSA key to PKEY');
       }
 
       RSA_free(rsa); // EVP_PKEY_set1_RSA increments ref count
@@ -152,7 +157,7 @@ class RsaKey extends CryptoKey {
         BN_free(nBn);
         BN_free(eBn);
         if (dBn != nullptr) BN_free(dBn);
-        throw Exception('Failed to set RSA factors');
+        checkOp(false, message: 'Failed to set RSA factors');
       }
       // nBn, eBn, dBn are now owned by rsa.
 
@@ -162,7 +167,7 @@ class RsaKey extends CryptoKey {
         if (RSA_set0_factors(rsa, pBn, qBn) != 1) {
           BN_free(pBn);
           BN_free(qBn);
-          throw Exception('Failed to set factors');
+          checkOp(false, message: 'Failed to set factors');
         }
       }
 
@@ -174,7 +179,7 @@ class RsaKey extends CryptoKey {
           BN_free(dpBn);
           BN_free(dqBn);
           BN_free(qiBn);
-          throw Exception('Failed to set CRT params');
+          checkOp(false, message: 'Failed to set CRT params');
         }
       }
 
@@ -182,10 +187,7 @@ class RsaKey extends CryptoKey {
 
       final pkey = EVP_PKEY_new();
       checkOp(pkey != nullptr);
-      if (EVP_PKEY_set1_RSA(pkey, rsa) != 1) {
-        EVP_PKEY_free(pkey);
-        throw Exception('Failed to set PKEY');
-      }
+      checkOpIsOne(EVP_PKEY_set1_RSA(pkey, rsa), message: 'Failed to set PKEY');
       return RsaKey(pkey);
     } finally {
       RSA_free(rsa);

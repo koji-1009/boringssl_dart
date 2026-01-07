@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 import 'bindings.g.dart';
+import 'util.dart';
 
 /// AES-GCM encryption/decryption.
 class AesGcm {
@@ -67,6 +68,7 @@ class AesGcm {
     return using((arena) {
       final aead = switch (key.length) {
         16 => EVP_aead_aes_128_gcm(),
+        24 => EVP_aead_aes_192_gcm(),
         32 => EVP_aead_aes_256_gcm(),
         _ => throw ArgumentError('Invalid key length: ${key.length}'),
       };
@@ -76,9 +78,7 @@ class AesGcm {
 
       final ctx = EVP_AEAD_CTX_new(aead, keyPtr, key.length, tagLength);
 
-      if (ctx == nullptr) {
-        throw Exception('Failed to create AEAD context');
-      }
+      checkOp(ctx != nullptr, message: 'Failed to create AEAD context');
 
       try {
         final noncePtr = arena<Uint8>(iv.length);
@@ -128,9 +128,10 @@ class AesGcm {
           );
         }
 
-        if (result != 1) {
-          throw Exception(encrypt ? 'Encryption failed' : 'Decryption failed');
-        }
+        checkOpIsOne(
+          result,
+          message: encrypt ? 'Encryption failed' : 'Decryption failed',
+        );
 
         return Uint8List.fromList(outPtr.asTypedList(outLenPtr.value));
       } finally {

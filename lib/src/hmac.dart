@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 import 'bindings.g.dart';
+import 'util.dart';
 
 /// One-shot and streaming HMAC.
 class Hmac {
@@ -15,33 +16,34 @@ class Hmac {
   static Uint8List sign(Uint8List key, Uint8List data, String hashAlgorithm) {
     return using((arena) {
       final ctx = HMAC_CTX_new();
-      if (ctx == nullptr) {
-        throw Exception('Failed to create HMAC context');
-      }
+      checkOp(ctx != nullptr, message: 'Failed to create HMAC context');
 
       try {
         final md = _getEvpMd(hashAlgorithm);
         final keyPtr = arena<Uint8>(key.length);
         keyPtr.asTypedList(key.length).setAll(0, key);
 
-        if (HMAC_Init_ex(ctx, keyPtr.cast(), key.length, md, nullptr) != 1) {
-          throw Exception('HMAC init failed');
-        }
+        checkOpIsOne(
+          HMAC_Init_ex(ctx, keyPtr.cast(), key.length, md, nullptr),
+          message: 'HMAC init failed',
+        );
 
         final dataPtr = arena<Uint8>(data.length);
         dataPtr.asTypedList(data.length).setAll(0, data);
 
-        if (HMAC_Update(ctx, dataPtr, data.length) != 1) {
-          throw Exception('HMAC update failed');
-        }
+        checkOpIsOne(
+          HMAC_Update(ctx, dataPtr, data.length),
+          message: 'HMAC update failed',
+        );
 
         final outLenPtr = arena<UnsignedInt>();
         // Max size for SHA-512 is 64 bytes.
         final outPtr = arena<Uint8>(64);
 
-        if (HMAC_Final(ctx, outPtr, outLenPtr) != 1) {
-          throw Exception('HMAC final failed');
-        }
+        checkOpIsOne(
+          HMAC_Final(ctx, outPtr, outLenPtr),
+          message: 'HMAC final failed',
+        );
 
         return Uint8List.fromList(outPtr.asTypedList(outLenPtr.value));
       } finally {
@@ -102,9 +104,7 @@ class HmacSigner implements Finalizable {
   /// Create a new signer.
   factory HmacSigner(Uint8List key, String hashAlgorithm) {
     final ctx = HMAC_CTX_new();
-    if (ctx == nullptr) {
-      throw Exception('Failed to create HMAC context');
-    }
+    checkOp(ctx != nullptr, message: 'Failed to create HMAC context');
     try {
       final signer = HmacSigner._(ctx);
       _finalizer.attach(signer, ctx.cast(), detach: signer);
@@ -114,9 +114,10 @@ class HmacSigner implements Finalizable {
         final keyPtr = arena<Uint8>(key.length);
         keyPtr.asTypedList(key.length).setAll(0, key);
 
-        if (HMAC_Init_ex(ctx, keyPtr.cast(), key.length, md, nullptr) != 1) {
-          throw Exception('HMAC init failed');
-        }
+        checkOpIsOne(
+          HMAC_Init_ex(ctx, keyPtr.cast(), key.length, md, nullptr),
+          message: 'HMAC init failed',
+        );
       });
 
       return signer;
@@ -132,9 +133,10 @@ class HmacSigner implements Finalizable {
     using((arena) {
       final dataPtr = arena<Uint8>(data.length);
       dataPtr.asTypedList(data.length).setAll(0, data);
-      if (HMAC_Update(_ctx, dataPtr, data.length) != 1) {
-        throw Exception('HMAC update failed');
-      }
+      checkOpIsOne(
+        HMAC_Update(_ctx, dataPtr, data.length),
+        message: 'HMAC update failed',
+      );
     });
   }
 
@@ -146,9 +148,10 @@ class HmacSigner implements Finalizable {
       final outLenPtr = arena<UnsignedInt>();
       final outPtr = arena<Uint8>(64); // Max size
 
-      if (HMAC_Final(_ctx, outPtr, outLenPtr) != 1) {
-        throw Exception('HMAC final failed');
-      }
+      checkOpIsOne(
+        HMAC_Final(_ctx, outPtr, outLenPtr),
+        message: 'HMAC final failed',
+      );
       return Uint8List.fromList(outPtr.asTypedList(outLenPtr.value));
     });
   }

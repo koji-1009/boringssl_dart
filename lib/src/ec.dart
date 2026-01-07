@@ -28,10 +28,10 @@ class EcKey extends CryptoKey {
         checkOp(pkey != nullptr, message: 'Failed to create EVP_PKEY');
 
         // set1 up-refs, so we must free ecKey after (or let finally block do it)
-        if (EVP_PKEY_set1_EC_KEY(pkey, ecKey) != 1) {
-          EVP_PKEY_free(pkey);
-          throw Exception('Failed to assign EC key');
-        }
+        checkOpIsOne(
+          EVP_PKEY_set1_EC_KEY(pkey, ecKey),
+          message: 'Failed to assign EC key',
+        );
         // ecKey is now shared, but we are done with our ref.
         // The finally block will free ecKey (our ref).
 

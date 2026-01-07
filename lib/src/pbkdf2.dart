@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 import 'bindings.g.dart';
+import 'util.dart';
 
 /// PBKDF2 key derivation.
 class Pbkdf2 {
@@ -48,9 +49,7 @@ class Pbkdf2 {
         outPtr,
       );
 
-      if (result != 1) {
-        throw Exception('PBKDF2 derivation failed');
-      }
+      checkOpIsOne(result, message: 'PBKDF2 derivation failed');
 
       return Uint8List.fromList(outPtr.asTypedList(length));
     });
