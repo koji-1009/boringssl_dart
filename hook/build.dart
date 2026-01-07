@@ -41,10 +41,10 @@ void main(List<String> args) async {
         }
 
         final abi = switch (targetArch) {
-          Architecture.arm64 => 'arm64-v8a',
-          Architecture.arm => 'armeabi-v7a',
-          Architecture.x64 => 'x86_64',
-          Architecture.ia32 => 'x86',
+          .arm64 => 'arm64-v8a',
+          .arm => 'armeabi-v7a',
+          .x64 => 'x86_64',
+          .ia32 => 'x86',
           _ => throw Exception('Unsupported Android architecture: $targetArch'),
         };
 
@@ -88,7 +88,7 @@ void main(List<String> args) async {
         ]);
       case .macOS:
         cmakeArgs.add(
-          '-DCMAKE_OSX_ARCHITECTURES=${targetArch == Architecture.arm64 ? "arm64" : "x86_64"}',
+          '-DCMAKE_OSX_ARCHITECTURES=${targetArch == .arm64 ? "arm64" : "x86_64"}',
         );
         cmakeArgs.add('-DCMAKE_MACOSX_BUNDLE=OFF');
       case .linux:
