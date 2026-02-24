@@ -82,3 +82,23 @@ String _getErrorMessage(int err) {
     return buf.cast<Utf8>().toDartString();
   });
 }
+
+/// Returns the [EVP_MD] for the given algorithm name.
+Pointer<EVP_MD> getEvpMd(String algorithm) {
+  return switch (algorithm) {
+    'SHA-1' => EVP_sha1(),
+    'SHA-256' => EVP_sha256(),
+    'SHA-384' => EVP_sha384(),
+    'SHA-512' => EVP_sha512(),
+    _ => throw ArgumentError('Unsupported algorithm: $algorithm'),
+  };
+}
+
+/// Extension to copy [Uint8List] data into arena-allocated native memory.
+extension ArenaDataExtension on Arena {
+  Pointer<Uint8> dataAsPointer(Uint8List data) {
+    final ptr = this<Uint8>(data.length);
+    ptr.asTypedList(data.length).setAll(0, data);
+    return ptr;
+  }
+}

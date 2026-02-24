@@ -17,7 +17,7 @@ class RsaPss {
     String hash,
   ) {
     return using((arena) {
-      final md = _getEvpMd(hash);
+      final md = getEvpMd(hash);
       final pkey = key.pkey;
       final ctx = EVP_MD_CTX_new();
       checkOp(ctx != nullptr, message: 'Failed to create MD context');
@@ -60,7 +60,7 @@ class RsaPss {
     String hash,
   ) {
     return using((arena) {
-      final md = _getEvpMd(hash);
+      final md = getEvpMd(hash);
       final pkey = key.pkey;
       final ctx = EVP_MD_CTX_new();
       checkOp(ctx != nullptr, message: 'Failed to create MD context');
@@ -92,21 +92,5 @@ class RsaPss {
     });
   }
 
-  static Pointer<EVP_MD> _getEvpMd(String algorithm) {
-    return switch (algorithm) {
-      'SHA-1' => EVP_sha1(),
-      'SHA-256' => EVP_sha256(),
-      'SHA-384' => EVP_sha384(),
-      'SHA-512' => EVP_sha512(),
-      _ => throw ArgumentError('Unsupported algorithm: $algorithm'),
-    };
-  }
 }
 
-extension on Arena {
-  Pointer<Uint8> dataAsPointer(Uint8List data) {
-    final ptr = this<Uint8>(data.length);
-    ptr.asTypedList(data.length).setAll(0, data);
-    return ptr;
-  }
-}

@@ -59,12 +59,8 @@ class EcKey extends CryptoKey {
       }
 
       final key = EcKey(pkeyPtr, curve);
-      try {
-        _validate(key, curve);
-        return key;
-      } catch (_) {
-        rethrow;
-      }
+      _validate(key, curve);
+      return key;
     });
   }
 
@@ -83,12 +79,8 @@ class EcKey extends CryptoKey {
       }
 
       final key = EcKey(pkeyPtr, curve);
-      try {
-        _validate(key, curve);
-        return key;
-      } catch (_) {
-        rethrow;
-      }
+      _validate(key, curve);
+      return key;
     });
   }
 
@@ -232,10 +224,3 @@ class EcKey extends CryptoKey {
   }
 }
 
-extension on Arena {
-  Pointer<Uint8> dataAsPointer(Uint8List data) {
-    final ptr = this<Uint8>(data.length);
-    ptr.asTypedList(data.length).setAll(0, data);
-    return ptr;
-  }
-}

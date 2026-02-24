@@ -74,13 +74,7 @@ class RsaOaep {
         );
 
         // Set OAEP Hash
-        Pointer<EVP_MD> md = switch (hashAlgorithm) {
-          'SHA-1' => EVP_sha1(),
-          'SHA-256' => EVP_sha256(),
-          'SHA-384' => EVP_sha384(),
-          'SHA-512' => EVP_sha512(),
-          _ => throw ArgumentError('Unsupported algorithm: $hashAlgorithm'),
-        };
+        final md = getEvpMd(hashAlgorithm);
 
         checkOpIsOne(
           EVP_PKEY_CTX_set_rsa_oaep_md(ctx, md),

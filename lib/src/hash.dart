@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:ffi/ffi.dart';
 
 import 'bindings.g.dart';
+import 'util.dart';
 
 /// A hash algorithm.
 class Hash {
@@ -27,7 +28,7 @@ class Hash {
       }
 
       try {
-        final md = _getEvpMd(_algorithmName);
+        final md = getEvpMd(_algorithmName);
 
         if (EVP_DigestInit(ctx, md) != 1) {
           throw Exception('Digest init failed for $_algorithmName');
@@ -57,15 +58,6 @@ class Hash {
     });
   }
 
-  static Pointer<EVP_MD> _getEvpMd(String algorithm) {
-    return switch (algorithm) {
-      'SHA-1' => EVP_sha1(),
-      'SHA-256' => EVP_sha256(),
-      'SHA-384' => EVP_sha384(),
-      'SHA-512' => EVP_sha512(),
-      _ => throw ArgumentError('Unsupported algorithm: $algorithm'),
-    };
-  }
 }
 
 /// Streaming hash context.
@@ -86,7 +78,7 @@ class HashContext implements Finalizable {
     _finalizer.attach(this, _ctx.cast(), detach: this);
 
     try {
-      final md = Hash._getEvpMd(algorithm);
+      final md = getEvpMd(algorithm);
       if (EVP_DigestInit(_ctx, md) != 1) {
         throw Exception('Digest init failed');
       }

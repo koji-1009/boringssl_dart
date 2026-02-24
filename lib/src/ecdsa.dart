@@ -15,7 +15,7 @@ class Ecdsa {
       final ctx = EVP_MD_CTX_new();
       checkOp(ctx != nullptr, message: 'Failed to create MD context');
       try {
-        final md = _getEvpMd(hash);
+        final md = getEvpMd(hash);
         final pkey = key.pkey;
 
         checkOpIsOne(
@@ -30,22 +30,16 @@ class Ecdsa {
         );
 
         // Determine size
-        final lenPtr =
-            arena<
-              Int
-            >(); // size_t* ? EVP_DigestSignFinal takes size_t* which is usually UnsignedLong or just Int in Dart FFI depending on arch.
-        // Bindings usually generate size_t as Int or Int64. Let's check bindings.
-        // Assuming Size (Int/Int64). I'll use Size.
-        // Wait, ffi Size is likely correct.
+        final lenPtr = arena<Size>();
 
         checkOpIsOne(
-          EVP_DigestSignFinal(ctx, nullptr, lenPtr.cast()),
+          EVP_DigestSignFinal(ctx, nullptr, lenPtr),
           message: 'Sign final (size) failed',
         );
 
         final sig = arena<Uint8>(lenPtr.value);
         checkOpIsOne(
-          EVP_DigestSignFinal(ctx, sig, lenPtr.cast()),
+          EVP_DigestSignFinal(ctx, sig, lenPtr),
           message: 'Sign final failed',
         );
 
@@ -71,7 +65,7 @@ class Ecdsa {
       final ctx = EVP_MD_CTX_new();
       checkOp(ctx != nullptr, message: 'Failed to create MD context');
       try {
-        final md = _getEvpMd(hash);
+        final md = getEvpMd(hash);
         final pkey = key.pkey;
 
         checkOpIsOne(
@@ -98,15 +92,6 @@ class Ecdsa {
     });
   }
 
-  static Pointer<EVP_MD> _getEvpMd(String algorithm) {
-    return switch (algorithm) {
-      'SHA-1' => EVP_sha1(),
-      'SHA-256' => EVP_sha256(),
-      'SHA-384' => EVP_sha384(),
-      'SHA-512' => EVP_sha512(),
-      _ => throw ArgumentError('Unsupported algorithm: $algorithm'),
-    };
-  }
 
   static Uint8List _derToRaw(Uint8List derSig, EcKey key, Arena arena) {
     // Parse DER to ECDSA_SIG
@@ -213,10 +198,3 @@ class Ecdsa {
   }
 }
 
-extension on Arena {
-  Pointer<Uint8> dataAsPointer(Uint8List data) {
-    final ptr = this<Uint8>(data.length);
-    ptr.asTypedList(data.length).setAll(0, data);
-    return ptr;
-  }
-}
