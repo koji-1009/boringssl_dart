@@ -126,6 +126,11 @@ void main(List<String> args) async {
       }
     }
 
+    // Track commit file so SDK re-runs hook when commit hash changes
+    output.dependencies.add(
+      input.packageRoot.resolve('native/boringssl_commit.txt'),
+    );
+
     stderr.writeln('Add asset...');
     output.assets.code.add(
       CodeAsset(
