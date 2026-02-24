@@ -19,7 +19,7 @@ class Hmac {
       checkOp(ctx != nullptr, message: 'Failed to create HMAC context');
 
       try {
-        final md = _getEvpMd(hashAlgorithm);
+        final md = getEvpMd(hashAlgorithm);
         final keyPtr = arena<Uint8>(key.length);
         keyPtr.asTypedList(key.length).setAll(0, key);
 
@@ -77,15 +77,6 @@ class Hmac {
     });
   }
 
-  static Pointer<EVP_MD> _getEvpMd(String algorithm) {
-    return switch (algorithm) {
-      'SHA-1' => EVP_sha1(),
-      'SHA-256' => EVP_sha256(),
-      'SHA-384' => EVP_sha384(),
-      'SHA-512' => EVP_sha512(),
-      _ => throw ArgumentError('Unsupported algorithm: $algorithm'),
-    };
-  }
 }
 
 /// Streaming HMAC signer.
@@ -110,7 +101,7 @@ class HmacSigner implements Finalizable {
       _finalizer.attach(signer, ctx.cast(), detach: signer);
 
       using((arena) {
-        final md = Hmac._getEvpMd(hashAlgorithm);
+        final md = getEvpMd(hashAlgorithm);
         final keyPtr = arena<Uint8>(key.length);
         keyPtr.asTypedList(key.length).setAll(0, key);
 

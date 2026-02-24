@@ -164,6 +164,20 @@ Future<void> _syncBoringSsl(Uri packageRoot) async {
     ], workingDirectory: boringsslPath);
   }
 
+  // Check if already on the target commit
+  final headResult = await Process.run(
+    'git',
+    ['rev-parse', 'HEAD'],
+    workingDirectory: boringsslPath,
+  );
+  final currentHead =
+      headResult.exitCode == 0 ? headResult.stdout.toString().trim() : null;
+
+  if (currentHead == targetCommit) {
+    stderr.writeln('BoringSSL already at $targetCommit. Skipping fetch.');
+    return;
+  }
+
   stderr.writeln('Fetching BoringSSL commit $targetCommit...');
   await _runCommand('git', [
     'fetch',

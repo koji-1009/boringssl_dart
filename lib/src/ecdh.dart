@@ -57,47 +57,10 @@ class Ecdh {
 
           final derived = Uint8List.fromList(out.asTypedList(lengthInBytes));
 
-          // Mask bits if needed
+          // Mask trailing bits if length is not byte-aligned.
+          // Zero out the least significant bits of the last byte.
           final zeroBits = lengthInBytes * 8 - length;
           if (zeroBits > 0) {
-            derived[derived.length - 1] &= ((0xff << zeroBits) & 0xff);
-            // WebCrypto logic: derived.last &= ((0xff << zeroBits) & 0xff);
-            // Wait, 0xff << 8 is 0x100?
-            // If zeroBits is 1...7.
-            // Example: length=1, inBytes=1. zeroBits = 7.
-            // 0xff << 7 = 0x8000 (if 32 bit). 0x80 (if 8 bit).
-            // (0xff << 7) & 0xff = 0x80.
-            // This masks the TOP bit?
-            // WebCrypto spec: "The most significant bits will be zero".
-            // If length is 1 bit, derived key is 1 byte.
-            // We want bits 7..1 to be zero?
-            // BoringSSL returns Big-Endian bytes?
-            // RFC 6090: "The shared secret value z is an integer... convert z to octet string".
-            // Usually it's raw X coordinate.
-            // If we ask for fewer bits than the field size, we usually truncate or use KDF.
-            // But WebCrypto 'deriveBits' slices the RESULT.
-            // The logic in webcrypto.dart masks the *last* byte?
-            // "Only return the first [length] bits".
-            // If result is [b0, b1, ...].
-            // And we want L bits.
-            // If L matches byte boundary, done.
-            // If L is e.g. 7 bits. We take 1 byte.
-            // We want the *first* 7 bits of that byte?
-            // WebCrypto: "most significant bits will be zero". This usually implies big-endian number interpretation where leading zeroes are padding.
-            // BUT `derived.last` suggests little-endian masking?
-            // Actually, `webcrypto.dart` logic:
-            /*
-               final zeroBits = lengthInBytes * 8 - length;
-               if (zeroBits > 0) {
-                 derived.last &= ((0xff << zeroBits) & 0xff); // This shifts 0xff LEFT by zeroBits.
-               }
-             */
-            // Example: 7 bits, 1 byte. zeroBits = 1.
-            // 0xff << 1 = 0x1FE (0xFE in 8-bit).
-            // derived.last &= 0xFE. Sets LSB to 0?
-            // This suggests the bits are "left aligned" in the byte or something?
-            // Or they want the "first" bits relative to MSB?
-            // I'll trust `webcrypto.dart` logic blindly for now.
             derived[derived.length - 1] &= ((0xff << zeroBits) & 0xff);
           }
           return derived;

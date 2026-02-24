@@ -27,7 +27,7 @@ class Hkdf {
     required String hashAlgorithm,
   }) {
     return using((arena) {
-      final md = _getEvpMd(hashAlgorithm);
+      final md = getEvpMd(hashAlgorithm);
 
       final outPtr = arena<Uint8>(length);
       final keyPtr = arena<Uint8>(key.length);
@@ -72,13 +72,4 @@ class Hkdf {
     });
   }
 
-  static Pointer<EVP_MD> _getEvpMd(String algorithm) {
-    return switch (algorithm) {
-      'SHA-1' => EVP_sha1(),
-      'SHA-256' => EVP_sha256(),
-      'SHA-384' => EVP_sha384(),
-      'SHA-512' => EVP_sha512(),
-      _ => throw ArgumentError('Unsupported algorithm: $algorithm'),
-    };
-  }
 }
