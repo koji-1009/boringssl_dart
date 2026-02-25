@@ -145,8 +145,12 @@ Future<void> _syncBoringSsl(Uri packageRoot) async {
   final currentHead = headResult.exitCode == 0
       ? headResult.stdout.toString().trim()
       : null;
-  if (currentHead == targetCommit) return;
+  if (currentHead == targetCommit) {
+    stderr.writeln('BoringSSL already at $targetCommit');
+    return;
+  }
 
+  stderr.writeln('Fetching BoringSSL $targetCommit');
   await _runCommand('git', [
     'fetch',
     '--depth',
