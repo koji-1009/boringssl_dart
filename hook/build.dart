@@ -150,7 +150,9 @@ Future<void> _syncBoringSsl(Uri packageRoot) async {
     return;
   }
 
-  stderr.writeln('Fetching BoringSSL $targetCommit');
+  stderr.writeln(
+    'Fetching https://github.com/google/boringssl.git@$targetCommit',
+  );
   await _runCommand('git', [
     'fetch',
     '--depth',
