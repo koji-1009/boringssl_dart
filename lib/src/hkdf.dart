@@ -71,5 +71,4 @@ class Hkdf {
       return Uint8List.fromList(outPtr.asTypedList(length));
     });
   }
-
 }

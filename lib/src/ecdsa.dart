@@ -92,7 +92,6 @@ class Ecdsa {
     });
   }
 
-
   static Uint8List _derToRaw(Uint8List derSig, EcKey key, Arena arena) {
     // Parse DER to ECDSA_SIG
     final cbs = arena<cbs_st>();
@@ -197,4 +196,3 @@ class Ecdsa {
     }
   }
 }
-

@@ -54,5 +54,4 @@ class Pbkdf2 {
       return Uint8List.fromList(outPtr.asTypedList(length));
     });
   }
-
 }

@@ -57,7 +57,6 @@ class Hash {
       }
     });
   }
-
 }
 
 /// Streaming hash context.
