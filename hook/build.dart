@@ -7,9 +7,7 @@ void main(List<String> args) async {
   await build(args, (input, output) async {
     final targetOS = input.config.code.targetOS;
     final targetArch = input.config.code.targetArchitecture;
-    stderr.writeln(
-      'boringssl_dart build ($targetOS/$targetArch)',
-    );
+    stderr.writeln('boringssl_dart build ($targetOS/$targetArch)');
 
     final packageName = input.packageName;
     final sourceDir = input.packageRoot.resolve('native/');
@@ -140,13 +138,13 @@ Future<void> _syncBoringSsl(Uri packageRoot) async {
     ], workingDirectory: boringsslPath);
   }
 
-  final headResult = await Process.run(
-    'git',
-    ['rev-parse', 'HEAD'],
-    workingDirectory: boringsslPath,
-  );
-  final currentHead =
-      headResult.exitCode == 0 ? headResult.stdout.toString().trim() : null;
+  final headResult = await Process.run('git', [
+    'rev-parse',
+    'HEAD',
+  ], workingDirectory: boringsslPath);
+  final currentHead = headResult.exitCode == 0
+      ? headResult.stdout.toString().trim()
+      : null;
   if (currentHead == targetCommit) return;
 
   await _runCommand('git', [

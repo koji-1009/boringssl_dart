@@ -223,4 +223,3 @@ class EcKey extends CryptoKey {
     return Uint8List.fromList(out.asTypedList(length));
   }
 }
-

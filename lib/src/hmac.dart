@@ -76,7 +76,6 @@ class Hmac {
       return CRYPTO_memcmp(sig1.cast(), sig2.cast(), computed.length) == 0;
     });
   }
-
 }
 
 /// Streaming HMAC signer.
