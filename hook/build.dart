@@ -115,7 +115,7 @@ void main(List<String> args) async {
   });
 }
 
-/// Checkout BoringSSL to the commit specified in native/boringssl_commit.txt.
+/// Download BoringSSL source for the commit specified in native/boringssl_commit.txt.
 Future<void> _syncBoringSsl(Uri packageRoot) async {
   final boringsslDir = packageRoot.resolve('third_party/boringssl/');
   final commitFile = packageRoot.resolve('native/boringssl_commit.txt');
@@ -125,46 +125,48 @@ Future<void> _syncBoringSsl(Uri packageRoot) async {
   }
 
   final targetCommit = File.fromUri(commitFile).readAsStringSync().trim();
-  final boringsslPath = boringsslDir.toFilePath();
+  final markerFile = File.fromUri(boringsslDir.resolve('.commit'));
 
-  if (!Directory.fromUri(boringsslDir).existsSync()) {
-    await Directory.fromUri(boringsslDir).create(recursive: true);
-    await _runCommand('git', ['init'], workingDirectory: boringsslPath);
-    await _runCommand('git', [
-      'remote',
-      'add',
-      'origin',
-      'https://github.com/google/boringssl.git',
-    ], workingDirectory: boringsslPath);
-  }
-
-  final headResult = await Process.run('git', [
-    'rev-parse',
-    'HEAD',
-  ], workingDirectory: boringsslPath);
-  final currentHead = headResult.exitCode == 0
-      ? headResult.stdout.toString().trim()
-      : null;
-  if (currentHead == targetCommit) {
+  if (markerFile.existsSync() &&
+      markerFile.readAsStringSync().trim() == targetCommit) {
     stderr.writeln('BoringSSL already at $targetCommit');
     return;
   }
 
-  stderr.writeln(
-    'Fetching https://github.com/google/boringssl.git@$targetCommit',
-  );
-  await _runCommand('git', [
-    'fetch',
-    '--depth',
-    '1',
-    '--no-tags',
-    'origin',
-    targetCommit,
-  ], workingDirectory: boringsslPath);
-  await _runCommand('git', [
-    'checkout',
-    targetCommit,
-  ], workingDirectory: boringsslPath);
+  final url =
+      'https://github.com/google/boringssl/archive/$targetCommit.tar.gz';
+  stderr.writeln('Fetching $url');
+
+  final client = HttpClient();
+  try {
+    final request = await client.getUrl(Uri.parse(url));
+    final response = await request.close();
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode} fetching $url');
+    }
+
+    final tarball = File.fromUri(
+      packageRoot.resolve('third_party/boringssl.tar.gz'),
+    );
+    await response.pipe(tarball.openWrite());
+
+    final dir = Directory.fromUri(boringsslDir);
+    if (dir.existsSync()) await dir.delete(recursive: true);
+    await dir.create(recursive: true);
+
+    await _runCommand('tar', [
+      'xzf',
+      tarball.path,
+      '--strip-components=1',
+      '-C',
+      boringsslDir.toFilePath(),
+    ]);
+
+    await markerFile.writeAsString(targetCommit);
+    await tarball.delete();
+  } finally {
+    client.close();
+  }
 }
 
 Future<void> _runCommand(
