@@ -144,14 +144,14 @@ Future<void> _syncBoringSsl(Uri packageRoot) async {
       throw Exception('HTTP ${response.statusCode} fetching $url');
     }
 
+    final dir = Directory.fromUri(boringsslDir);
+    if (dir.existsSync()) await dir.delete(recursive: true);
+    await dir.create(recursive: true);
+
     final tarball = File.fromUri(
       packageRoot.resolve('third_party/boringssl.tar.gz'),
     );
     await response.pipe(tarball.openWrite());
-
-    final dir = Directory.fromUri(boringsslDir);
-    if (dir.existsSync()) await dir.delete(recursive: true);
-    await dir.create(recursive: true);
 
     await _runCommand('tar', [
       'xzf',
