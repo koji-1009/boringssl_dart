@@ -124,17 +124,16 @@ Future<void> _syncBoringSsl(Uri packageRoot) async {
     throw Exception('Missing native/boringssl_commit.txt');
   }
 
-  final targetCommit = File.fromUri(commitFile).readAsStringSync().trim();
+  final commit = File.fromUri(commitFile).readAsStringSync().trim();
   final markerFile = File.fromUri(boringsslDir.resolve('.commit'));
 
   if (markerFile.existsSync() &&
-      markerFile.readAsStringSync().trim() == targetCommit) {
-    stderr.writeln('BoringSSL already at $targetCommit');
+      markerFile.readAsStringSync().trim() == commit) {
+    stderr.writeln('BoringSSL already at $commit');
     return;
   }
 
-  final url =
-      'https://github.com/google/boringssl/archive/$targetCommit.tar.gz';
+  final url = 'https://github.com/google/boringssl/archive/$commit.tar.gz';
   stderr.writeln('Fetching $url');
 
   final client = HttpClient();
@@ -162,7 +161,7 @@ Future<void> _syncBoringSsl(Uri packageRoot) async {
       boringsslDir.toFilePath(),
     ]);
 
-    await markerFile.writeAsString(targetCommit);
+    await markerFile.writeAsString(commit);
     await tarball.delete();
   } finally {
     client.close();
