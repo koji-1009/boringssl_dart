@@ -203,7 +203,7 @@ class EcKey extends CryptoKey {
             dBytes = _bnToBytes(priv, paramLen, arena);
           }
 
-          return {'x': xBytes, 'y': yBytes, if (dBytes != null) 'd': dBytes};
+          return {'x': xBytes, 'y': yBytes, 'd': ?dBytes};
         } finally {
           BN_free(xBn);
           BN_free(yBn);
