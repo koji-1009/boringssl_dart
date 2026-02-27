@@ -67,7 +67,6 @@ final config = FfiGenerator(
     'CBB_init',
     'CBB_len',
     'CBB_zero',
-    'CBS_init',
     'CRYPTO_memcmp',
     'ECDH_compute_key',
     'ECDSA_SIG_free',
