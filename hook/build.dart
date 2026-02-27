@@ -7,7 +7,11 @@ void main(List<String> args) async {
   await build(args, (input, output) async {
     final targetOS = input.config.code.targetOS;
     final targetArch = input.config.code.targetArchitecture;
-    stderr.writeln('boringssl_dart build ($targetOS/$targetArch)');
+    final linkingEnabled = input.config.linkingEnabled;
+    final buildMode = linkingEnabled ? 'link hook' : 'standalone';
+    stderr.writeln(
+      'boringssl_dart build ($targetOS/$targetArch, mode: $buildMode)',
+    );
 
     final packageName = input.packageName;
     final sourceDir = input.packageRoot.resolve('native/');
@@ -24,6 +28,7 @@ void main(List<String> args) async {
       '-B',
       buildDir.toFilePath(),
       '-DCMAKE_BUILD_TYPE=$buildType',
+      if (!linkingEnabled) '-DBUILD_SHARED_BORINGSSL_DART=ON',
     ];
 
     switch (targetOS) {
@@ -79,40 +84,100 @@ void main(List<String> args) async {
     }
 
     await _runCommand('cmake', cmakeArgs);
+
+    // Targets must be specified explicitly because BoringSSL is added with
+    // EXCLUDE_FROM_ALL, so ssl/crypto are not part of the default ALL target.
     await _runCommand('cmake', [
       '--build',
       buildDir.toFilePath(),
       '--config',
       buildType,
+      '--target',
+      if (linkingEnabled) ...[
+        'ssl',
+        '--target',
+        'crypto',
+      ] else
+        'boringssl_dart',
     ]);
-
-    // Locate shared library
-    final libName = targetOS.dylibFileName('boringssl_dart');
-    Uri libFile = buildDir.resolve(libName);
-    // Multi-config generators (e.g. MSVC) place output under Release/
-    if (!File.fromUri(libFile).existsSync()) {
-      final libFileSub = buildDir.resolve('$buildType/$libName');
-      if (File.fromUri(libFileSub).existsSync()) {
-        libFile = libFileSub;
-      } else {
-        throw Exception(
-          'Library $libName not found in build directory $buildDir',
-        );
-      }
-    }
 
     output.dependencies.add(
       input.packageRoot.resolve('native/boringssl_commit.txt'),
     );
-    output.assets.code.add(
-      CodeAsset(
-        package: packageName,
-        name: 'boringssl_dart',
-        file: libFile,
-        linkMode: DynamicLoadingBundled(),
-      ),
-    );
+
+    if (linkingEnabled) {
+      // Route static archives to link hook for tree-shaking
+      final sslLib = _findStaticLib(buildDir, 'ssl', targetOS);
+      final cryptoLib = _findStaticLib(buildDir, 'crypto', targetOS);
+
+      output.dependencies.add(sslLib);
+      output.dependencies.add(cryptoLib);
+
+      output.assets.code.add(
+        CodeAsset(
+          package: packageName,
+          name: 'package:$packageName/ssl',
+          file: sslLib,
+          linkMode: StaticLinking(),
+        ),
+        routing: ToLinkHook(packageName),
+      );
+      output.assets.code.add(
+        CodeAsset(
+          package: packageName,
+          name: 'package:$packageName/crypto',
+          file: cryptoLib,
+          linkMode: StaticLinking(),
+        ),
+        routing: ToLinkHook(packageName),
+      );
+    } else {
+      // Link hooks unavailable (e.g. dart test) — output shared library directly
+      final libName = targetOS.dylibFileName('boringssl_dart');
+      Uri libFile = buildDir.resolve(libName);
+      // Multi-config generators (e.g. MSVC) place output under Release/
+      if (!File.fromUri(libFile).existsSync()) {
+        final libFileSub = buildDir.resolve('$buildType/$libName');
+        if (File.fromUri(libFileSub).existsSync()) {
+          libFile = libFileSub;
+        } else {
+          throw Exception(
+            'Library $libName not found in build directory $buildDir',
+          );
+        }
+      }
+
+      output.assets.code.add(
+        CodeAsset(
+          package: packageName,
+          name: 'boringssl_dart',
+          file: libFile,
+          linkMode: DynamicLoadingBundled(),
+        ),
+      );
+    }
   });
+}
+
+/// Locate the static library for [name] in the build directory tree.
+Uri _findStaticLib(Uri buildDir, String name, OS targetOS) {
+  final isWindows = targetOS == OS.windows;
+  final fileName = isWindows ? '$name.lib' : 'lib$name.a';
+
+  final buildDirPath = Directory.fromUri(buildDir);
+  final matches = buildDirPath
+      .listSync(recursive: true)
+      .whereType<File>()
+      .where((f) => f.uri.pathSegments.last == fileName)
+      .toList();
+
+  if (matches.isEmpty) {
+    throw Exception(
+      'Static library $fileName not found in build directory $buildDir',
+    );
+  }
+
+  return matches.first.uri;
 }
 
 /// Download BoringSSL source for the commit specified in native/boringssl_commit.txt.
