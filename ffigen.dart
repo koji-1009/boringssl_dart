@@ -218,68 +218,56 @@ final config = FfiGenerator(
   }),
 );
 
-// Helper to setup BoringSSL source
+/// Download BoringSSL source for the commit specified in native/boringssl_commit.txt.
 Future<void> setupBoringSsl() async {
-  // Assume running from package root
-  final boringsslPath = 'third_party/boringssl';
+  final boringsslDir = Directory('third_party/boringssl');
   final commitFile = File('native/boringssl_commit.txt');
 
   if (!commitFile.existsSync()) {
-    throw Exception('Missing config: native/boringssl_commit.txt');
-  }
-  final targetCommit = commitFile.readAsStringSync().trim();
-
-  if (!Directory(boringsslPath).existsSync()) {
-    print('Initializing BoringSSL repository...');
-    await Directory(boringsslPath).create(recursive: true);
-    await _runGit(['init'], workingDirectory: boringsslPath);
-    await _runGit([
-      'remote',
-      'add',
-      'origin',
-      'https://github.com/google/boringssl.git',
-    ], workingDirectory: boringsslPath);
+    throw Exception('Missing native/boringssl_commit.txt');
   }
 
-  print('Fetching BoringSSL commit $targetCommit...');
-  await _runGit([
-    'fetch',
-    '--depth',
-    '1',
-    '--no-tags',
-    'origin',
-    targetCommit,
-  ], workingDirectory: boringsslPath);
+  final commit = commitFile.readAsStringSync().trim();
+  final markerFile = File('third_party/boringssl/.commit');
 
-  // Check if we are already on the target commit
-  String? currentHead;
-
-  // Correction: _runGit as defined in previous steps is void and throws.
-  // Use Process.run directly for checks.
-  final headResult = await Process.run('git', [
-    'rev-parse',
-    'HEAD',
-  ], workingDirectory: boringsslPath);
-  if (headResult.exitCode == 0) {
-    currentHead = headResult.stdout.toString().trim();
+  if (markerFile.existsSync() &&
+      markerFile.readAsStringSync().trim() == commit) {
+    print('BoringSSL already at $commit');
+    return;
   }
 
-  if (currentHead == targetCommit) {
-    print('Already on commit $targetCommit. Skipping checkout.');
-  } else {
-    print('Checking out $targetCommit...');
-    await _runGit(['checkout', targetCommit], workingDirectory: boringsslPath);
-  }
-}
+  final url = 'https://github.com/google/boringssl/archive/$commit.tar.gz';
+  print('Fetching $url');
 
-Future<void> _runGit(List<String> args, {String? workingDirectory}) async {
-  final result = await Process.run(
-    'git',
-    args,
-    workingDirectory: workingDirectory,
-  );
-  if (result.exitCode != 0) {
-    throw Exception('git ${args.join(" ")} failed: ${result.stderr}');
+  final client = HttpClient();
+  try {
+    final request = await client.getUrl(Uri.parse(url));
+    final response = await request.close();
+    if (response.statusCode != 200) {
+      throw Exception('HTTP ${response.statusCode} fetching $url');
+    }
+
+    if (boringsslDir.existsSync()) await boringsslDir.delete(recursive: true);
+    await boringsslDir.create(recursive: true);
+
+    final tarball = File('third_party/boringssl.tar.gz');
+    await response.pipe(tarball.openWrite());
+
+    final result = await Process.run('tar', [
+      'xzf',
+      tarball.path,
+      '--strip-components=1',
+      '-C',
+      boringsslDir.path,
+    ]);
+    if (result.exitCode != 0) {
+      throw Exception('tar extraction failed: ${result.stderr}');
+    }
+
+    await markerFile.writeAsString(commit);
+    await tarball.delete();
+  } finally {
+    client.close();
   }
 }
 
