@@ -5,6 +5,8 @@ import 'package:hooks/hooks.dart';
 
 void main(List<String> args) async {
   await build(args, (input, output) async {
+    if (!input.config.buildCodeAssets) return;
+
     final targetOS = input.config.code.targetOS;
     final targetArch = input.config.code.targetArchitecture;
     stderr.writeln('boringssl_dart build ($targetOS/$targetArch)');
@@ -44,7 +46,7 @@ void main(List<String> args) async {
         cmakeArgs.addAll([
           '-DCMAKE_TOOLCHAIN_FILE=$ndkPath/build/cmake/android.toolchain.cmake',
           '-DANDROID_ABI=$abi',
-          '-DANDROID_PLATFORM=android-21',
+          '-DANDROID_PLATFORM=android-${input.config.code.android.targetNdkApi}',
           '-DANDROID_STL=c++_static',
           // https://developer.android.com/guide/practices/page-sizes
           '-DANDROID_SUPPORT_FLEXIBLE_PAGE_SIZES=ON',
@@ -73,6 +75,7 @@ void main(List<String> args) async {
         cmakeArgs.addAll([
           '-DCMAKE_OSX_ARCHITECTURES=${targetArch == .arm64 ? "arm64" : "x86_64"}',
           '-DCMAKE_MACOSX_BUNDLE=OFF',
+          '-DCMAKE_OSX_DEPLOYMENT_TARGET=${input.config.code.macOS.targetVersion}',
         ]);
       case .linux:
       case .windows:
@@ -192,14 +195,14 @@ Future<void> _runCommand(
 String? _findAndroidNdk() {
   final envNdk =
       Platform.environment['ANDROID_NDK_HOME'] ??
-      Platform.environment['ANDROID_NDK'];
+      Platform.environment['ANDROID_NDK'] ??
+      Platform.environment['ANDROID_NDK_LATEST_HOME'] ??
+      Platform.environment['ANDROID_NDK_ROOT'];
   if (envNdk != null && envNdk.isNotEmpty && Directory(envNdk).existsSync()) {
     return envNdk;
   }
 
-  final androidHome =
-      Platform.environment['ANDROID_HOME'] ??
-      Platform.environment['ANDROID_SDK_ROOT'];
+  final androidHome = Platform.environment['ANDROID_HOME'];
   if (androidHome != null && androidHome.isNotEmpty) {
     final ndkDir = Directory('$androidHome/ndk');
     if (ndkDir.existsSync()) {
