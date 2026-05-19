@@ -16,11 +16,22 @@ void main(List<String> args) async {
     final codeAssets = input.assets.code;
     final sources = [for (final asset in codeAssets) asset.file!.toFilePath()];
 
+    // BoringSSL has C++ TUs that reference the libstdc++ exception
+    // personality (`__gxx_personality_v0`). `CLinker` invokes clang as
+    // a C driver, so libstdc++ is not pulled in automatically on Linux
+    // and Android. Apple/iOS toolchains add libc++ implicitly. Windows
+    // is skipped from AOT smoke entirely (cmake target invocation bug).
+    final targetOS = input.config.code.targetOS;
+    final needsCxxRuntime = targetOS == OS.linux || targetOS == OS.android;
+
     final linker = CLinker.library(
       name: 'boringssl_dart',
       assetName: 'boringssl_dart',
       sources: sources,
-      linkerOptions: LinkerOptions.treeshake(symbolsToKeep: symbols),
+      linkerOptions: LinkerOptions.treeshake(
+        symbolsToKeep: symbols,
+        flags: needsCxxRuntime ? const ['-lstdc++'] : null,
+      ),
     );
 
     await linker.run(input: input, output: output, logger: logger);
