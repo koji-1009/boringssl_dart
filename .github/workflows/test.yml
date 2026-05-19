@@ -25,3 +25,11 @@ jobs:
         run: |
           dart pub get
           dart test
+
+      - name: AOT smoke (link-hook path)
+        shell: bash
+        run: |
+          dart build cli --target example/ec_spki_roundtrip.dart -o build/smoke
+          exe=build/smoke/bundle/bin/ec_spki_roundtrip
+          [ -f "$exe.exe" ] && exe="$exe.exe"
+          "$exe"

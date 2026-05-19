@@ -39,6 +39,16 @@ endif()
 
 add_subdirectory(../third_party/boringssl boringssl EXCLUDE_FROM_ALL)
 
+# Override BoringSSL's vendored `-fvisibility=hidden` for ssl/crypto/fipsmodule
+# in both modes. With LTO (CMAKE_INTERPROCEDURAL_OPTIMIZATION) the visibility
+# is baked into the LLVM bitcode and the linker can no longer promote symbols
+# via `-exported_symbols_list` / `--version-script`, so this must happen at
+# compile time on the target — not only inside BUILD_SHARED_BORINGSSL_DART.
+set_target_properties(ssl crypto fipsmodule PROPERTIES
+    CXX_VISIBILITY_PRESET default
+    C_VISIBILITY_PRESET default
+    VISIBILITY_INLINES_HIDDEN 0)
+
 # Shared library fallback (used when link hooks are unavailable, e.g. dart test).
 # When link hooks ARE available, only the static ssl/crypto archives are needed
 # and CLinker in hook/link.dart handles the final shared library with tree-shaking.
@@ -49,8 +59,6 @@ if(BUILD_SHARED_BORINGSSL_DART)
 
     set_target_properties(boringssl_dart PROPERTIES
         CXX_VISIBILITY_PRESET default VISIBILITY_INLINES_HIDDEN 0)
-    set_target_properties(ssl crypto fipsmodule PROPERTIES
-        CXX_VISIBILITY_PRESET default C_VISIBILITY_PRESET default VISIBILITY_INLINES_HIDDEN 0)
 
     if(WIN32)
         if(MSVC)
