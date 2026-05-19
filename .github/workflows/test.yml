@@ -17,11 +17,21 @@ jobs:
         sdk: [ stable, beta ]
 
     steps:
-      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-      - uses: dart-lang/setup-dart@e51d8e571e22473a2ddebf0ef8a2123f0ab2c02c # v1.7.1
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+      - uses: dart-lang/setup-dart@65eb853c7ba17dde3be364c3d2858773e7144260 # v1.7.2
         with:
           sdk: ${{ matrix.sdk }}
       - name: Run Tests
         run: |
           dart pub get
           dart test
+
+      # Windows skipped: `cmake --build --target ssl --target crypto` fails
+      # under the MSBuild generator (MSB1009). Pre-existing in the build hook,
+      # tracked separately from the visibility/LTO fix.
+      - name: AOT smoke (link-hook path)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          dart build cli --target example/ec_spki_roundtrip.dart -o build/smoke
+          "build/smoke/bundle/bin/ec_spki_roundtrip"
