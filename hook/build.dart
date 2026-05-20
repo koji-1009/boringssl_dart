@@ -96,12 +96,7 @@ void main(List<String> args) async {
       '--config',
       buildType,
       '--target',
-      if (linkingEnabled) ...[
-        'ssl',
-        '--target',
-        'crypto',
-      ] else
-        'boringssl_dart',
+      linkingEnabled ? 'boringssl_libs' : 'boringssl_dart',
     ]);
 
     output.dependencies.add(
