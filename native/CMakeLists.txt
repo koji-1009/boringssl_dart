@@ -51,6 +51,15 @@ endif()
 
 add_subdirectory(../third_party/boringssl boringssl EXCLUDE_FROM_ALL)
 
+# Top-level aggregate used by the link-hook build path. Direct
+# `cmake --build --target ssl` on a subdirectory project fails with MSB1009
+# under the Visual Studio 2026 generator (the slnx path lookup drops the
+# subdirectory prefix). Going through a top-level utility target hands
+# MSBuild a vcxproj at the build-tree root, and add_dependencies emits the
+# ProjectReferences that pull in ssl/crypto.
+add_custom_target(boringssl_libs)
+add_dependencies(boringssl_libs ssl crypto)
+
 # Override BoringSSL's vendored `-fvisibility=hidden` for ssl/crypto/fipsmodule.
 # Load-bearing in standalone mode (LTO bakes the hidden visibility into the
 # bitcode, so the linker can't promote symbols via `-exported_symbols_list`).
