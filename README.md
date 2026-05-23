@@ -47,9 +47,9 @@ This command runs three steps:
 
 ### Tree-Shaking via Link Hook (`hook/link.dart`)
 
-> Available on the `link` branch as a reference implementation.
+> The link hook ships on `main`; the link-hook path is exercised by the AOT smoke check in CI on every desktop platform (Linux, macOS, Windows).
 
-When `linkingEnabled` is true (app builds via Flutter), the build hook outputs static archives (`libssl.a`, `libcrypto.a`) and routes them to the link hook via `ToLinkHook`. The link hook uses `CLinker` with `LinkerOptions.treeshake(symbolsToKeep: symbols)` to produce a shared library containing only the symbols actually referenced by `@ffi.Native` in `bindings.g.dart`.
+When `linkingEnabled` is true (app/CLI builds, e.g. Flutter or `dart build cli`), the build hook outputs static archives (`libssl.a`, `libcrypto.a`) and routes them to the link hook via `ToLinkHook`. The link hook uses `CLinker` with `LinkerOptions.treeshake(symbolsToKeep: symbols)` to produce a shared library containing only the symbols actually referenced by `@ffi.Native` in `bindings.g.dart`.
 
 ```
 ffigen.dart          hook/build.dart          hook/link.dart

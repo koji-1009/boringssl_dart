@@ -19,8 +19,8 @@ void main(List<String> args) async {
     // BoringSSL has C++ TUs that reference the libstdc++ exception
     // personality (`__gxx_personality_v0`). `CLinker` invokes clang as
     // a C driver, so libstdc++ is not pulled in automatically on Linux
-    // and Android. Apple/iOS toolchains add libc++ implicitly. Windows
-    // is skipped from AOT smoke entirely (cmake target invocation bug).
+    // and Android. Apple/iOS and Windows toolchains link their C++
+    // runtime implicitly, so no extra flag is needed there.
     final targetOS = input.config.code.targetOS;
     final needsCxxRuntime = targetOS == OS.linux || targetOS == OS.android;
 
