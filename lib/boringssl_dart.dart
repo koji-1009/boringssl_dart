@@ -17,3 +17,4 @@ export 'src/rsa_oaep.dart';
 export 'src/rsa_pss.dart';
 export 'src/rsa_ssa_pkcs1.dart';
 export 'src/util.dart' show constantTimeEq, getOpenSslErrors;
+export 'src/version.g.dart' show boringsslCommit;
