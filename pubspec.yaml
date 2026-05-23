@@ -1,7 +1,9 @@
 name: boringssl_dart
-description: A starting point for Dart libraries or applications.
+description: >-
+  BoringSSL crypto bindings for Dart built with Dart Hooks (Native Assets),
+  exposing WebCrypto-style AES, RSA, EC, hashing, HMAC, and KDF APIs.
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/koji-1009/boringssl_dart
 
 environment:
   sdk: ^3.10.0
