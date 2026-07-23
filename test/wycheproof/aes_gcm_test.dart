@@ -7,9 +7,8 @@
 // one length it rejects is a zero-length IV — and the only zero-length-IV group
 // in the vectors is marked "invalid", so it is covered by the ordinary
 // invalid -> throws branch. Consequently no group is special-cased by IV size;
-// every group runs the standard valid/invalid/acceptable logic. (`AesGcm`'s
-// doc says "iv must be 12 bytes"; that is the WebCrypto-conformant contract, but
-// the underlying primitive does not enforce it — noted, not a correctness bug.)
+// every group runs the standard valid/invalid/acceptable logic. `AesGcm`'s doc
+// documents exactly this contract: any non-empty IV, 12 bytes being standard.
 //
 // Decrypt input is `ct || tag`; `tagLength` is the tag size in bytes. All groups
 // here use a 128-bit tag; a group whose tag falls outside the API's 12..16-byte
