@@ -143,6 +143,19 @@ void main(List<String> args) async {
         // here would defeat it (CMakeLists.txt set it on WIN32).
         if (targetOS == OS.windows && !linkingEnabled)
           'BORINGSSL_SHARED_LIBRARY': null,
+        // The rest of CMakeLists.txt's WIN32 define block. Required to compile
+        // under MSVC: NOMINMAX stops <windows.h> defining min()/max() macros
+        // that break `std::numeric_limits<>::max()`; WIN32_LEAN_AND_MEAN stops
+        // it pulling in the legacy <winsock.h>, which redefines sockaddr /
+        // socket / accept against BoringSSL's <winsock2.h>. _HAS_EXCEPTIONS=0
+        // matches the exception-free C++ runtime; _CRT_SECURE_NO_WARNINGS
+        // silences the CRT deprecation warnings.
+        if (targetOS == OS.windows) ...{
+          'NOMINMAX': null,
+          'WIN32_LEAN_AND_MEAN': null,
+          '_HAS_EXCEPTIONS': '0',
+          '_CRT_SECURE_NO_WARNINGS': null,
+        },
       },
       // GNU-only compile flags (skipped on Windows/MSVC, where they are invalid
       // and there are no .S inputs). Upstream compiles libcrypto's C++ with
