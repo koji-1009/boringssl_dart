@@ -1,0 +1,16 @@
+# A .pubignore REPLACES .gitignore when deciding what the published package
+# contains, so it must repeat the .gitignore entries and then add publish-only
+# exclusions.
+
+# --- mirrored from .gitignore ---
+.dart_tool/
+pubspec.lock
+.DS_Store
+build/
+third_party/boringssl/
+
+# --- publish-only exclusions ---
+# Wycheproof vectors are committed to git so an offline `dart test` works after
+# clone, but they are large and irrelevant to consumers — keep them out of the
+# published package.
+test/wycheproof/vectors/

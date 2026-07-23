@@ -53,10 +53,11 @@ class EcKey extends CryptoKey {
       cbs.ref.data = dataPtr;
       cbs.ref.len = keyData.length;
 
+      // checkOp drains the error queue on failure (design-notes "Error
+      // handling posture"); a bare throw here would leak the parse errors
+      // into the next BoringSSL call on this thread.
       final pkeyPtr = EVP_parse_private_key(cbs.cast());
-      if (pkeyPtr == nullptr) {
-        throw Exception('Failed to parse private key');
-      }
+      checkOp(pkeyPtr != nullptr, fallback: 'Failed to parse private key');
 
       final key = EcKey(pkeyPtr, curve);
       _validate(key, curve);
@@ -73,10 +74,9 @@ class EcKey extends CryptoKey {
       cbs.ref.data = dataPtr;
       cbs.ref.len = keyData.length;
 
+      // See importPkcs8: checkOp drains the error queue on failure.
       final pkeyPtr = EVP_parse_public_key(cbs.cast());
-      if (pkeyPtr == nullptr) {
-        throw Exception('Failed to parse public key');
-      }
+      checkOp(pkeyPtr != nullptr, fallback: 'Failed to parse public key');
 
       final key = EcKey(pkeyPtr, curve);
       _validate(key, curve);

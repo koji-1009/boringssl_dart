@@ -1,0 +1,98 @@
+// ECDSA (P1363 / raw r||s) Wycheproof verify suites.
+//
+// The public API (`Ecdsa.verify`) takes the signature as raw r||s (IEEE P1363)
+// and converts it to DER internally, so the `*_p1363_test.json` vectors match it
+// directly. Each group carries its own curve (`publicKey.curve`) and digest
+// (`sha`), so a single loop drives P-256/P-384/P-521 without special-casing.
+//
+// Fail-closed contract (doc/design-notes.md, "Error handling posture"): a
+// signature that does not verify returns `false`, it never throws. The invalid
+// branch asserts exactly that — including the vectors that are invalid purely
+// on signature *size*, which `verify` rejects by enforcing the P1363 fixed
+// length (2 * field bytes) before any DER conversion.
+import 'package:boringssl_dart/boringssl_dart.dart';
+import 'package:test/test.dart';
+
+import 'runner.dart';
+
+// Wycheproof spells curves `secpNNNr1`; the API uses WebCrypto names.
+const _curveByWycheproofName = {
+  'secp256r1': 'P-256',
+  'secp384r1': 'P-384',
+  'secp521r1': 'P-521',
+};
+
+const _ecdsaFiles = [
+  'ecdsa_secp256r1_sha256_p1363_test.json',
+  'ecdsa_secp384r1_sha384_p1363_test.json',
+  'ecdsa_secp521r1_sha512_p1363_test.json',
+];
+
+void main() {
+  var exercised = 0;
+  var skipped = 0;
+
+  for (final fileName in _ecdsaFiles) {
+    final suite = WycheproofSuite.load(fileName);
+
+    group('ECDSA Wycheproof ($fileName)', () {
+      for (final g in suite.groups) {
+        final wycheproofCurve = (g.field<Map>('publicKey')!)['curve'] as String;
+        final curve = _curveByWycheproofName[wycheproofCurve];
+        if (curve == null) {
+          // No unsupported curve is expected in the vendored files; count it
+          // rather than fail silently if one ever appears.
+          skipped += g.tests.length;
+          continue;
+        }
+        final hash = g.field<String>('sha')!;
+        final key = EcKey.importSpki(hexDecode(g.field<String>('publicKeyDer')!), curve);
+
+        for (final c in g.tests) {
+          final sig = c.bytes('sig');
+          final msg = c.bytes('msg');
+
+          exercised++;
+          test(caseName(c), () {
+            switch (c.result) {
+              case 'valid':
+                expect(Ecdsa.verify(key, sig, msg, hash), isTrue);
+              case 'invalid':
+                final bool ok;
+                try {
+                  ok = Ecdsa.verify(key, sig, msg, hash);
+                } catch (e) {
+                  fail(
+                    'An invalid signature must fail closed (return false), '
+                    'not throw: $e',
+                  );
+                }
+                expect(ok, isFalse);
+              case 'acceptable':
+                // Legal-but-discouraged: either boolean is fine, it just must
+                // not throw.
+                expect(
+                  () => Ecdsa.verify(key, sig, msg, hash),
+                  returnsNormally,
+                );
+              default:
+                fail('Unknown result: ${c.result}');
+            }
+            expectCleanErrorQueue();
+          });
+        }
+      }
+    });
+  }
+
+  group('ECDSA Wycheproof coverage', () {
+    test('coverage summary', () {
+      // ignore: avoid_print
+      print(
+        'ECDSA: $exercised cases exercised, $skipped skipped '
+        '(across ${_ecdsaFiles.length} P1363 verify files).',
+      );
+      expect(exercised, greaterThan(0));
+    });
+  });
+}

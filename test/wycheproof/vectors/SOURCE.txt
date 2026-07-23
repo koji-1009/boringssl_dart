@@ -1,0 +1,36 @@
+Wycheproof test vectors
+=======================
+
+Source: https://github.com/C2SP/wycheproof
+Commit: b61843a9a5115bb758134b6a1f5d5e502d445342
+Directory: testvectors_v1/ (legacy testvectors/ per-file fallback)
+
+Regenerate with:
+  dart run tool/sync_wycheproof.dart
+
+These vectors are committed so an offline `dart test` works after
+clone, but are excluded from the published pub package (.pubignore).
+
+Files:
+  aes_gcm_test.json
+  aes_cbc_pkcs5_test.json
+  rsa_oaep_2048_sha1_mgf1sha1_test.json
+  rsa_oaep_2048_sha256_mgf1sha256_test.json
+  rsa_oaep_2048_sha512_mgf1sha512_test.json
+  rsa_pss_2048_sha256_mgf1_32_test.json
+  rsa_pss_4096_sha512_mgf1_32_test.json
+  rsa_signature_2048_sha256_test.json
+  rsa_signature_2048_sha512_test.json
+  ecdsa_secp256r1_sha256_p1363_test.json
+  ecdsa_secp384r1_sha384_p1363_test.json
+  ecdsa_secp521r1_sha512_p1363_test.json
+  ecdh_secp256r1_test.json
+  ecdh_secp384r1_test.json
+  ecdh_secp521r1_test.json
+  hkdf_sha256_test.json
+  hkdf_sha512_test.json
+  hmac_sha1_test.json
+  hmac_sha256_test.json
+  hmac_sha384_test.json
+  hmac_sha512_test.json
+  pbkdf2_hmacsha256_test.json

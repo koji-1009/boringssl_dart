@@ -13,7 +13,9 @@ class AesGcm {
   /// Encrypts [data] using AES-GCM.
   ///
   /// [key] must be 16, 24, or 32 bytes.
-  /// [iv] must be 12 bytes.
+  /// [iv] must not be empty; 12 bytes (96 bits) is the standard size. Other
+  /// lengths are processed per the GCM specification (BoringSSL derives the
+  /// initial counter via GHASH).
   /// [additionalData] (optional) is authenticated but not encrypted.
   /// [tagLength] must be between 12 and 16 bytes.
   static Uint8List encrypt(
@@ -36,7 +38,8 @@ class AesGcm {
   /// Decrypts [data] using AES-GCM.
   ///
   /// [key] must be 16, 24, or 32 bytes.
-  /// [iv] must be 12 bytes.
+  /// [iv] must match the value used during encryption (any non-empty length;
+  /// see [encrypt]).
   /// [additionalData] must match the data used during encryption.
   /// [tagLength] must match the tag length used during encryption.
   /// The tag is expected to be appended to the end of [data].
