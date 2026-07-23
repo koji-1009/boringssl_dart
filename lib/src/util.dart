@@ -20,12 +20,20 @@ void checkOp(bool condition, {String? message, String? fallback}) {
 void checkOpIsOne(int retval, {String? message, String? fallback}) =>
     checkOp(retval == 1, message: message, fallback: fallback);
 
+/// Pops the least-recent error off BoringSSL's thread-local error queue and
+/// formats it as a human-readable string, then clears the whole queue
+/// unconditionally so no residual error state leaks into the next call on this
+/// thread.
+///
+/// Returns null when the queue was empty (some failures set no error), letting
+/// [checkOp] fall back to its supplied message.
 String? _extractError() {
-  // Simple error extraction (can be expanded)
-  final err = ERR_peek_error();
-  if (err == 0) return null;
+  final code = ERR_get_error();
+  // Drain anything else the failing call may have stacked, unconditionally, so
+  // a later call never observes a stale error from this one.
   ERR_clear_error();
-  return 'BoringSSL Error: $err';
+  if (code == 0) return null;
+  return _getErrorMessage(code);
 }
 
 /// Helper to allocate a CBB, init it, run [fn], and return bytes.
