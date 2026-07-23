@@ -7,16 +7,9 @@
 //
 // Fail-closed contract (doc/design-notes.md, "Error handling posture"): a
 // signature that does not verify returns `false`, it never throws. The invalid
-// branch asserts exactly that.
-//
-// KNOWN DEVIATION (suspected gap in lib/src/ecdsa.dart): `verify` does not
-// enforce the P1363 fixed signature length (2 * field bytes). BoringSSL
-// DER-verifies whatever r,s the raw bytes encode, so a handful of Wycheproof
-// vectors that are "invalid" purely on signature *size* (small r,s packed into a
-// too-short buffer) are accepted (return true). Every such wrongly-accepted
-// vector has `sig.length != 2 * fieldBytes`; the invalid branch encodes this
-// current behavior and guards the dangerous case — a *correct-length* invalid
-// signature verifying true would be a real forgery and fails the test.
+// branch asserts exactly that — including the vectors that are invalid purely
+// on signature *size*, which `verify` rejects by enforcing the P1363 fixed
+// length (2 * field bytes) before any DER conversion.
 import 'package:boringssl_dart/boringssl_dart.dart';
 import 'package:test/test.dart';
 
@@ -28,10 +21,6 @@ const _curveByWycheproofName = {
   'secp384r1': 'P-384',
   'secp521r1': 'P-521',
 };
-
-// Field element size in bytes per curve: the P1363 signature must be exactly
-// twice this.
-const _fieldBytes = {'P-256': 32, 'P-384': 48, 'P-521': 66};
 
 const _ecdsaFiles = [
   'ecdsa_secp256r1_sha256_p1363_test.json',
@@ -56,7 +45,6 @@ void main() {
           skipped += g.tests.length;
           continue;
         }
-        final fieldBytes = _fieldBytes[curve]!;
         final hash = g.field<String>('sha')!;
         final key = EcKey.importSpki(hexDecode(g.field<String>('publicKeyDer')!), curve);
 
@@ -79,21 +67,7 @@ void main() {
                     'not throw: $e',
                   );
                 }
-                if (ok) {
-                  // TODO(ecdsa): lib/src/ecdsa.dart does not reject raw
-                  // signatures whose length != 2 * fieldBytes, so BoringSSL
-                  // accepts the small r,s these encode. Once verify() enforces
-                  // the P1363 length, these become the expected `false` and this
-                  // branch can be removed. A correct-length invalid signature
-                  // accepted here would be a genuine forgery, hence the guard.
-                  expect(
-                    sig.length,
-                    isNot(2 * fieldBytes),
-                    reason:
-                        'only wrong-length invalid signatures are (wrongly) '
-                        'accepted; a correct-length one verifying true is a forgery',
-                  );
-                }
+                expect(ok, isFalse);
               case 'acceptable':
                 // Legal-but-discouraged: either boolean is fine, it just must
                 // not throw.

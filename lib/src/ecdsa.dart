@@ -134,10 +134,11 @@ class Ecdsa {
   }
 
   static Uint8List? _rawToDer(Uint8List rawSig, EcKey key, Arena arena) {
-    // Only need curve to check length if needed, but rawSig is fixed size?
-    // We assume rawSig is R|S.
-    if (rawSig.length % 2 != 0) return null;
-    final n = rawSig.length ~/ 2;
+    // P1363 form is r || s with each half padded to the curve's field length.
+    // Any other length is malformed and must fail verification (fail closed)
+    // rather than be split at the midpoint into a still-plausible r/s pair.
+    final n = _fieldBytes(key);
+    if (rawSig.length != 2 * n) return null;
 
     final rBytes = _minimalSignedInt(rawSig.sublist(0, n));
     final sBytes = _minimalSignedInt(rawSig.sublist(n));
@@ -159,6 +160,18 @@ class Ecdsa {
     seq.add(payload.toBytes());
 
     return seq.toBytes();
+  }
+
+  /// Field element length in bytes of [key]'s curve.
+  static int _fieldBytes(EcKey key) {
+    final ecKey = EVP_PKEY_get1_EC_KEY(key.pkey);
+    checkOp(ecKey != nullptr, message: 'Not an EC key');
+    try {
+      final group = EC_KEY_get0_group(ecKey);
+      return (EC_GROUP_get_degree(group) + 7) ~/ 8;
+    } finally {
+      EC_KEY_free(ecKey);
+    }
   }
 
   static Uint8List _minimalSignedInt(Uint8List bytes) {
