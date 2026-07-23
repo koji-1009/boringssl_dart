@@ -17,15 +17,6 @@
 //                 runs OUTSIDE the catch so a wrong secret can never be swallowed.
 //                 Most acceptable encodings (unnamed curve, compressed points)
 //                 are rejected at import; the few that derive must match.
-//
-// KNOWN DEVIATION (suspected gap in lib/src/ec.dart): `importSpki` and
-// `importPkcs8` throw a plain `Exception('Failed to parse ...')` when the
-// underlying `EVP_parse_*_key` returns null, WITHOUT draining the BoringSSL
-// error queue — unlike the `checkOp` path, which drains unconditionally
-// (design-notes "Error handling posture"). Left as-is, the residual would trip
-// `expectCleanErrorQueue()` on every rejected case. Until ec.dart drains on
-// those throw paths, the catch blocks here drain it themselves; see
-// `_drainAfterKnownLeak`.
 import 'dart:typed_data';
 
 import 'package:boringssl_dart/boringssl_dart.dart';
@@ -100,7 +91,7 @@ void main() {
                 try {
                   secret = derive();
                 } catch (_) {
-                  _drainAfterKnownLeak();
+                  // Rejection is the expected path; secret stays null.
                 }
                 // Rejection is the required outcome; a produced secret — most
                 // dangerously one equal to `shared` — would mean an invalid
@@ -117,7 +108,7 @@ void main() {
                 try {
                   secret = derive();
                 } catch (_) {
-                  _drainAfterKnownLeak();
+                  // Rejection is also acceptable; secret stays null.
                 }
                 if (secret != null) {
                   expect(secret, equals(shared));
@@ -142,15 +133,6 @@ void main() {
       expect(exercised, greaterThan(0));
     });
   });
-}
-
-/// Drains any residual BoringSSL error queue left by a rejected key import.
-///
-/// TODO(ec): remove once `EcKey.importSpki`/`importPkcs8` drain the error queue
-/// on their parse-failure throw paths (they currently bypass `checkOp`, which is
-/// the code that drains). `getOpenSslErrors` empties the queue as a side effect.
-void _drainAfterKnownLeak() {
-  getOpenSslErrors();
 }
 
 /// Wraps a raw EC private scalar in a minimal PKCS#8 `PrivateKeyInfo` so it can
