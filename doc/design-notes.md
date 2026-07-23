@@ -37,7 +37,7 @@ Folding `native/CMakeLists.txt` into a single `CBuilder`/`CLinker` call made it 
 - BoringSSL here is a **distributed / middleware** shared library, and a Flutter app is always a **multi-native-library** process (the engine, other plugins). The NDK's rule: with more than one shared library, use `c++_shared`; linking `libc++` statically in several libraries duplicates the C++ runtime and breaks the One Definition Rule (typeinfo, exceptions, static globals). So `c++_static` would be the riskier choice here.
 - The NDK's middleware advice is "use `c++_shared`, or hide libc++'s symbols with a version script." The link-hook path already does the latter: its `treeshake` exports only the crypto keep-list, so libc++ symbols are not part of the library's ABI surface.
 
-The residual is a **packaging** requirement, not a code defect: an app must ship `libc++_shared.so`. Building a Flutter app with Gradle bundles it automatically; on the pure Dart native-assets path, depend on [`package:android_libcpp_shared`](https://pub.dev/packages/android_libcpp_shared), whose own build hook bundles the NDK's `libc++_shared.so` per architecture.
+The residual is a **packaging** requirement, not a code defect: an app must ship `libc++_shared.so`, and — verified on-device — the Dart native-assets build does **not** bundle it automatically. An Android app depending on `boringssl_dart` must add [`package:android_libcpp_shared`](https://pub.dev/packages/android_libcpp_shared), whose build hook bundles the NDK's `libc++_shared.so` per architecture; `example/flutter_app` does exactly this, and without it the on-device run fails at load with `dlopen failed: library "libc++_shared.so" not found`.
 
 Sources:
 
@@ -63,4 +63,4 @@ A further narrowing exists in principle: annotate each binding with `@RecordUse(
 | --- | --- |
 | macOS | Verified locally — `dart test` + AOT link-hook smoke |
 | Linux (x64/arm), Windows | CI — `dart test` + AOT smoke |
-| Android, iOS | Best-effort; **not** in CI, unverified. The Android C++ runtime choice above is reasoned from NDK guidance, not from an on-device build |
+| Android, iOS | Verified on-device via `example/flutter_app` — `integration_test/crypto_test.dart` passes on an iOS simulator and an Android emulator. Not yet in CI. Android additionally requires `package:android_libcpp_shared` (see above) |
