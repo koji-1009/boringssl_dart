@@ -70,7 +70,7 @@ Key points:
 
 ### Platform notes
 
-The compiled library links the C++ standard library dynamically. On **Android** that means the app must ship `libc++_shared.so` — the Dart native-assets build does **not** bundle it automatically (verified: the app crashes at load with `dlopen failed: library "libc++_shared.so" not found` otherwise), so an Android app depending on `boringssl_dart` must add a dependency on [`package:android_libcpp_shared`](https://pub.dev/packages/android_libcpp_shared), as [`example/flutter_app`](example/flutter_app) does. Android and iOS are verified on-device by that example's `integration_test` (iOS simulator + Android emulator); macOS is verified locally and Linux/Windows in CI. Mobile is not yet in CI.
+On **Android** the C++ standard library is linked **statically** into the compiled `libboringssl_dart.so`, so the artifact is self-contained (`DT_NEEDED` on only `libc.so`/`libdl.so`) — an app depending on `boringssl_dart` needs no extra dependency or setup. [`example/flutter_app`](example/flutter_app) uses the package on Android and iOS.
 
 The rationale behind the build hooks — the settings carried over from the removed CMake build, the Android C++ runtime choice, the deferred `@RecordUse` narrowing, and the error-handling posture — is recorded in [`doc/design-notes.md`](doc/design-notes.md).
 

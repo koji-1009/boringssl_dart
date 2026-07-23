@@ -32,12 +32,11 @@ Folding `native/CMakeLists.txt` into a single `CBuilder`/`CLinker` call made it 
 
 ## C++ runtime on Android
 
-`boringSslLinkLibraries(OS.android)` returns `c++_shared`, so the produced library carries a `DT_NEEDED` on `libc++_shared.so` (an NDK runtime, not a device system library). This is deliberate, and matches Android NDK guidance — it is **not** a regression from the old CMake `ANDROID_STL=c++_static`:
+`boringSslLinkLibraries(OS.android)` returns `['c++_static', 'c++abi']`, so libc++ is folded **statically** into `libboringssl_dart.so`, leaving `DT_NEEDED` on only `libc.so` and `libdl.so` (both on-device system libraries). The artifact is self-contained: an app depending on `boringssl_dart` needs no extra dependency or setup.
 
-- BoringSSL here is a **distributed / middleware** shared library, and a Flutter app is always a **multi-native-library** process (the engine, other plugins). The NDK's rule: with more than one shared library, use `c++_shared`; linking `libc++` statically in several libraries duplicates the C++ runtime and breaks the One Definition Rule (typeinfo, exceptions, static globals). So `c++_static` would be the riskier choice here.
-- The NDK's middleware advice is "use `c++_shared`, or hide libc++'s symbols with a version script." The link-hook path already does the latter: its `treeshake` exports only the crypto keep-list, so libc++ symbols are not part of the library's ABI surface.
+The alternative — linking `c++_shared` — leaves a `DT_NEEDED` on the NDK's `libc++_shared.so`, which is **not** an on-device system library. The Dart native-assets build does not bundle it, so that path fails at load with `dlopen failed: library "libc++_shared.so" not found` unless the app ships the `.so` itself (e.g. via a third-party package). Static linking keeps the artifact self-contained and the consumer zero-config, in line with this package's from-source, no-external-artifacts premise.
 
-The residual is a **packaging** requirement, not a code defect: an app must ship `libc++_shared.so`, and — verified on-device — the Dart native-assets build does **not** bundle it automatically. An Android app depending on `boringssl_dart` must add [`package:android_libcpp_shared`](https://pub.dev/packages/android_libcpp_shared), whose build hook bundles the NDK's `libc++_shared.so` per architecture; `example/flutter_app` does exactly this, and without it the on-device run fails at load with `dlopen failed: library "libc++_shared.so" not found`.
+The NDK cautions that statically linking libc++ into several shared libraries in one process duplicates the C++ runtime and can break the One Definition Rule. That hazard does not apply here: the link-hook path's version script exports only the crypto keep-list, so libc++ symbols stay out of this library's ABI surface (the NDK's own "hide libc++'s symbols with a version script" remedy), and BoringSSL's C++ (compiled `-fno-exceptions -fno-rtti`) carries no cross-library typeinfo or exception state.
 
 Sources:
 
@@ -56,11 +55,3 @@ A further narrowing exists in principle: annotate each binding with `@RecordUse(
 - A native failure surfaces the **human-readable** BoringSSL error string (`ERR_error_string_n`), and consuming it **drains the whole error queue unconditionally** (`ERR_get_error` + `ERR_clear_error`), so a residual error never leaks into the next call on the thread.
 - Verify paths **fail closed**: a signature that does not verify returns `false` and drains the queue, never throws.
 - `test/leak_test.dart` guards this under repetition: thousands of alternating valid/invalid verifications must stay stable with an empty error queue at the end.
-
-## Platform / verification status
-
-| Platform | Status |
-| --- | --- |
-| macOS | Verified locally — `dart test` + AOT link-hook smoke |
-| Linux (x64/arm), Windows | CI — `dart test` + AOT smoke |
-| Android, iOS | Verified on-device via `example/flutter_app` — `integration_test/crypto_test.dart` passes on an iOS simulator and an Android emulator. Not yet in CI. Android additionally requires `package:android_libcpp_shared` (see above) |
